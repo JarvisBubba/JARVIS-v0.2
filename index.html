@@ -34,13 +34,12 @@ body::after{
 @keyframes pulse{50%{transform:scale(.94); filter:brightness(.85)}}
 @keyframes blink{50%{opacity:.25}}
 @keyframes holo{0%,93%,100%{opacity:1}94%{opacity:.82}96%{opacity:.95}98%{opacity:.88}}
-@keyframes eq{from{height:5px}to{height:22px}}
 @keyframes msgIn{from{opacity:0; transform:translateY(8px); filter:brightness(2.2)}to{opacity:1; filter:brightness(1)}}
 @keyframes surgeK{0%{filter:brightness(1)}30%{filter:brightness(2.6) drop-shadow(0 0 60px rgba(63,210,255,1))}100%{filter:brightness(1)}}
+@keyframes tscan{from{top:8%}to{top:92%}}
 
 body.stark{ --bg:#140b03; --panel:rgba(29,18,6,.8); --line:#5e3a12; --cyan:#ffc24d; --cyan-dim:#b06a1c; }
 
-/* layers */
 #fx{position:fixed; inset:0; z-index:0; pointer-events:none}
 header,.hud,footer{position:relative; z-index:2}
 
@@ -58,7 +57,7 @@ header,.hud,footer{position:relative; z-index:2}
   align-items:center; justify-content:center; gap:16px; transition:opacity .6s; cursor:pointer}
 #boot.done{opacity:0; pointer-events:none}
 #boot-log{font-family:"Rajdhani"; white-space:pre-wrap; color:var(--cyan); font-size:.9rem;
-  letter-spacing:.08em; width:min(460px,90%); min-height:10em; text-shadow:0 0 8px rgba(63,210,255,.5)}
+  letter-spacing:.08em; width:min(460px,90%); min-height:11em; text-shadow:0 0 8px rgba(63,210,255,.5)}
 .b-bar{width:min(460px,90%); height:4px; border:1px solid var(--line)}
 .b-bar i{display:block; height:100%; width:0; background:var(--cyan); box-shadow:0 0 12px var(--cyan); transition:width .2s}
 .b-skip{font-family:"Orbitron"; font-size:.55rem; letter-spacing:.4em; color:var(--cyan-dim); animation:blink 1.6s infinite}
@@ -84,6 +83,8 @@ button:hover, #chat-btn:hover{background:var(--cyan); color:#04101c}
 #chat-btn{display:inline-flex; align-items:center; border-color:var(--amber); color:var(--amber);
   background:rgba(255,181,77,.08); text-decoration:none; text-transform:uppercase}
 #chat-btn:hover{background:var(--amber); color:#04101c}
+#target-btn{border-color:var(--red); color:var(--red); background:rgba(255,93,93,.08)}
+#target-btn:hover{background:var(--red); color:#04101c}
 #mic.rec{border-color:var(--red); color:var(--red); animation:blink 1s infinite}
 
 /* grid */
@@ -104,7 +105,6 @@ button:hover, #chat-btn:hover{background:var(--cyan); color:#04101c}
 }
 .module h3 span{color:var(--cyan); animation:blink 2s infinite}
 
-/* meters / gauge / streams */
 .meter{margin:9px 0}
 .meter .lbl{display:flex; justify-content:space-between; font-size:.6rem; letter-spacing:.2em; color:var(--cyan-dim)}
 .meter .lbl b{color:var(--cyan)}
@@ -162,11 +162,7 @@ button:hover, #chat-btn:hover{background:var(--cyan); color:#04101c}
 .orb.alarm .t3{background:radial-gradient(circle at 50% 35%, #fff 0%, var(--red) 45%, #4a0a0a 90%); animation-duration:.3s}
 .orb.alarm .r2{border-color:var(--red)}
 .state{text-align:center; font-family:"Orbitron"; font-size:.62rem; letter-spacing:.35em; color:var(--cyan); margin-top:10px; min-height:1.2em}
-.wave{display:flex; gap:5px; justify-content:center; height:24px; align-items:flex-end; margin-top:8px}
-.wave span{width:4px; height:6px; background:var(--cyan); opacity:.45}
-.orb.speaking ~ .wave span{animation:eq .5s ease-in-out infinite alternate}
-.wave span:nth-child(2){animation-delay:.1s}.wave span:nth-child(3){animation-delay:.2s}
-.wave span:nth-child(4){animation-delay:.05s}.wave span:nth-child(5){animation-delay:.15s}
+#viz{display:block; width:100%; height:38px; margin-top:10px}
 
 /* console */
 .console{background:var(--panel); border:1px solid var(--line); padding:14px 16px; animation:holo 10s infinite;
@@ -192,6 +188,28 @@ input:focus{border-color:var(--cyan); box-shadow:0 0 12px rgba(63,224,255,.25)}
 
 footer{border-top:1px solid var(--line); padding:10px; text-align:center;
   font-family:"Orbitron"; font-size:.6rem; letter-spacing:.7em; color:rgba(63,210,255,.4)}
+
+/* targeting mode */
+#targeting{position:fixed; inset:0; z-index:70; pointer-events:none; display:none;
+  background:radial-gradient(circle at 50% 50%, transparent 55%, rgba(255,93,93,.07) 100%)}
+#targeting.on{display:block}
+#targeting .corner{position:absolute; width:64px; height:64px; border:2px solid rgba(255,93,93,.75)}
+.c-tl{top:12px; left:12px; border-right:none; border-bottom:none}
+.c-tr{top:12px; right:12px; border-left:none; border-bottom:none}
+.c-bl{bottom:12px; left:12px; border-right:none; border-top:none}
+.c-br{bottom:12px; right:12px; border-left:none; border-top:none}
+#t-scan{position:absolute; left:0; right:0; height:2px;
+  background:linear-gradient(90deg, transparent, rgba(255,93,93,.7), transparent); animation:tscan 3s linear infinite}
+#t-ret{position:absolute; left:0; top:0; width:130px; height:130px; margin:-65px 0 0 -65px}
+#t-ret .rr{position:absolute; border-radius:50%; border:1px solid rgba(255,93,93,.85)}
+.rr1{inset:0; border-style:dashed; animation:spin 6s linear infinite}
+.rr2{inset:20px; border-color:rgba(255,181,77,.85); animation:spin 4s linear infinite reverse}
+#t-ret .cx{position:absolute; left:50%; top:50%; width:10px; height:10px; margin:-5px;
+  background:rgba(255,93,93,.95); border-radius:50%; box-shadow:0 0 14px rgba(255,93,93,1)}
+#t-data{position:absolute; top:22px; left:96px; font-family:"Orbitron"; font-size:.6rem;
+  letter-spacing:.2em; color:rgba(255,93,93,.9); line-height:2}
+#t-exit{position:absolute; bottom:18px; left:50%; transform:translateX(-50%);
+  font-family:"Orbitron"; font-size:.58rem; letter-spacing:.3em; color:rgba(255,181,77,.9); animation:blink 2s infinite}
 
 /* settings */
 #overlay{position:fixed; inset:0; background:rgba(3,10,18,.85); backdrop-filter:blur(3px);
@@ -234,6 +252,7 @@ footer{border-top:1px solid var(--line); padding:10px; text-align:center;
       CORE: <b>ONLINE</b> · UPLINK: <b id="uplink">OFFLINE</b><br>
       <span id="clock">--:--:--</span> UTC
     </div>
+    <button type="button" id="target-btn">◎ TARGET</button>
     <a href="chat.html" id="chat-btn">💬 CHAT</a>
     <button type="button" id="gear">⚙ SETTINGS</button>
   </div>
@@ -275,7 +294,7 @@ footer{border-top:1px solid var(--line); padding:10px; text-align:center;
         <div class="tri t1"></div><div class="tri t2"></div><div class="tri t3"></div>
       </div>
       <div class="state" id="state">STANDBY</div>
-      <div class="wave"><span></span><span></span><span></span><span></span><span></span></div>
+      <canvas id="viz"></canvas>
     </div>
 
     <div class="console">
@@ -320,6 +339,24 @@ footer{border-top:1px solid var(--line); padding:10px; text-align:center;
 
 <footer>STARK INDUSTRIES</footer>
 
+<!-- ================= TARGETING MODE ================= -->
+<div id="targeting">
+  <div class="corner c-tl"></div><div class="corner c-tr"></div>
+  <div class="corner c-bl"></div><div class="corner c-br"></div>
+  <div id="t-scan"></div>
+  <div id="t-ret">
+    <div class="rr rr1"></div><div class="rr rr2"></div><div class="cx"></div>
+  </div>
+  <div id="t-data">
+    TGT-MODE v2.4<br>
+    X:<span id="t-x">0000</span> Y:<span id="t-y">0000</span><br>
+    RANGE: <span id="t-range">--</span><br>
+    LOCK: <span id="t-lock">--</span>
+  </div>
+  <div id="t-exit">TARGETING MODE — [T] OR ◎ TO DISENGAGE</div>
+</div>
+
+<!-- ================= SETTINGS ================= -->
 <div id="overlay" hidden>
   <div class="modal">
     <h2>SETTINGS — IDENTITY</h2>
@@ -391,7 +428,7 @@ function applyIdentity(){
   $("#uplink").textContent = S.geminiKey ? "ARMED" : "OFFLINE";
 }
 
-/* ================= sfx ================= */
+/* ================= sfx + boot sound ================= */
 let AC = null;
 function sfx(freq=880, dur=.06, type="square", vol=.04){
   if(!S.sfx) return;
@@ -405,6 +442,39 @@ function sfx(freq=880, dur=.06, type="square", vol=.04){
     o.start(); o.stop(AC.currentTime+dur);
   }catch(e){}
 }
+function powerUp(){
+  if(!S.sfx) return;
+  try{
+    AC = AC || new (window.AudioContext||window.webkitAudioContext)();
+    const t=AC.currentTime;
+    const o=AC.createOscillator(), g=AC.createGain();
+    o.type="sawtooth"; o.frequency.setValueAtTime(60,t);
+    o.frequency.exponentialRampToValueAtTime(880,t+1.2);
+    g.gain.setValueAtTime(.0001,t);
+    g.gain.exponentialRampToValueAtTime(.06,t+.25);
+    g.gain.exponentialRampToValueAtTime(.0001,t+1.4);
+    o.connect(g); g.connect(AC.destination); o.start(t); o.stop(t+1.5);
+    [110,165,220].forEach(f=>{
+      const o2=AC.createOscillator(), g2=AC.createGain();
+      o2.type="sine"; o2.frequency.value=f;
+      g2.gain.setValueAtTime(.0001,t);
+      g2.gain.exponentialRampToValueAtTime(.03,t+.4);
+      g2.gain.exponentialRampToValueAtTime(.0001,t+1.6);
+      o2.connect(g2); g2.connect(AC.destination); o2.start(t); o2.stop(t+1.7);
+    });
+    const o3=AC.createOscillator(), g3=AC.createGain();
+    o3.type="triangle"; o3.frequency.setValueAtTime(1760,t+.9);
+    o3.frequency.exponentialRampToValueAtTime(3520,t+1.3);
+    g3.gain.setValueAtTime(.0001,t+.9);
+    g3.gain.exponentialRampToValueAtTime(.02,t+1.05);
+    g3.gain.exponentialRampToValueAtTime(.0001,t+1.5);
+    o3.connect(g3); g3.connect(AC.destination); o3.start(t+.9); o3.stop(t+1.6);
+  }catch(e){}
+}
+let booted=false;
+function firstGesture(){ if(booted)return; booted=true; powerUp(); }
+addEventListener("pointerdown", firstGesture);
+addEventListener("keydown", firstGesture);
 
 /* ================= data ================= */
 const JOKES=["I would tell you a UDP joke, but you might not get it.",
@@ -430,7 +500,7 @@ const store={
 /* ================= speech ================= */
 function speak(text){
   if(!S.voice || !("speechSynthesis" in window)) return;
-  const u=new SpeechSynthesisUtterance(text.replace(/[🕐📅🧮🪙😏💬📚⚠✔✘]/g,""));
+  const u=new SpeechSynthesisUtterance(text.replace(/[🕐🧮😏💬⚠✔✘]/g,""));
   const v=speechSynthesis.getVoices().find(v=>v.lang.startsWith("en") && /male|daniel|google uk/i.test(v.name))
         || speechSynthesis.getVoices().find(v=>v.lang.startsWith("en"));
   if(v) u.voice=v;
@@ -614,7 +684,6 @@ function closeSettings(){overlay.hidden=true;}
 $("#gear").onclick=()=>{sfx(700,.05);openSettings();};
 $("#s-close").onclick=closeSettings;
 overlay.addEventListener("click",e=>{if(e.target===overlay)closeSettings();});
-addEventListener("keydown",e=>{if(e.key==="Escape")closeSettings();});
 $("#s-eye").onclick=()=>{const k=$("#s-key");const show=k.type==="password";k.type=show?"text":"password";$("#s-eye").textContent=show?"HIDE":"SHOW";};
 $("#s-save").onclick=()=>{
   S.name=$("#s-name").value.trim()||"J.A.R.V.I.S.";
@@ -665,13 +734,67 @@ orb.addEventListener("click",()=>{
   setTimeout(()=>orb.classList.remove("surge"),950);
 });
 const reticle=$("#reticle");
+const tRet=$("#t-ret");
+let targetOn=false;
 addEventListener("mousemove",e=>{
   reticle.style.transform=`translate(${e.clientX}px,${e.clientY}px)`;
+  if(targetOn){
+    tRet.style.transform=`translate(${e.clientX}px,${e.clientY}px)`;
+    $("#t-x").textContent=String(e.clientX).padStart(4,"0");
+    $("#t-y").textContent=String(e.clientY).padStart(4,"0");
+  }
   const r=orb.getBoundingClientRect();
   const dx=(e.clientX-(r.left+r.width/2))/r.width;
   const dy=(e.clientY-(r.top+r.height/2))/r.height;
   orb.style.transform=`perspective(750px) rotateY(${Math.max(-1,Math.min(1,dx))*9}deg) rotateX(${Math.max(-1,Math.min(1,-dy))*9}deg)`;
 });
+
+/* ================= targeting mode ================= */
+function setTarget(on){
+  targetOn=on;
+  $("#targeting").classList.toggle("on",on);
+  reticle.style.display=on?"none":"";
+  if(on){sfx(1500,.12,"sawtooth",.05);
+    logMsg("jarvis","Targeting mode engaged. Do try not to aim at anything friendly, "+P().addr()+".");}
+  else{sfx(500,.1); logMsg("jarvis","Targeting mode disengaged.");}
+}
+$("#target-btn").onclick=()=>setTarget(!targetOn);
+addEventListener("keydown",e=>{
+  if(e.target.closest("input,select"))return;
+  if(e.key==="t"||e.key==="T") setTarget(!targetOn);
+  if(e.key==="Escape"&&targetOn) setTarget(false);
+});
+setInterval(()=>{
+  if(!targetOn)return;
+  $("#t-range").textContent=(5+Math.random()*120).toFixed(1)+"m";
+  $("#t-lock").textContent=Math.floor(60+Math.random()*40)+"%";
+},500);
+
+/* ================= voice waveform visualizer ================= */
+const viz=$("#viz"), vz=viz.getContext("2d");
+const BARS=56, vals=new Array(BARS).fill(0);
+let vizLevel=0;
+function vizTarget(){
+  if(orb.classList.contains("speaking"))return 1;
+  if(orb.classList.contains("listening"))return .6;
+  if(orb.classList.contains("alarm"))return .8;
+  return .12;
+}
+(function drawViz(){
+  const w=viz.width=viz.clientWidth||300, h=viz.height=viz.clientHeight||38;
+  vz.clearRect(0,0,w,h);
+  vizLevel+=(vizTarget()-vizLevel)*.08;
+  const col=document.body.classList.contains("stark")?"255,194,77":"63,210,255";
+  const bw=w/BARS;
+  for(let i=0;i<BARS;i++){
+    const target=vizLevel*(0.2+Math.random()*0.8);
+    vals[i]+=(target-vals[i])*.35;
+    const bh=Math.max(2,vals[i]*h);
+    vz.fillStyle=`rgba(${col},${(0.25+vals[i]*0.75).toFixed(2)})`;
+    vz.fillRect(i*bw+1,(h-bh)/2,bw-2,bh);
+  }
+  requestAnimationFrame(drawViz);
+})();
 
 /* ================= plexus particles ================= */
 const cv=$("#fx"), cx2=cv.getContext("2d");
@@ -715,6 +838,7 @@ const BOOT_LINES=[
 "> J.A.R.V.I.S. kernel v4.2.1 — cold start",
 "> loading personality matrix ........ OK",
 "> calibrating arc reactor ........... OK",
+"> calibrating targeting array ....... OK",
 "> syncing telemetry array ........... OK",
 "> establishing satellite uplink ..... OK",
 "> welcome back, sir"];
@@ -727,7 +851,7 @@ function endBoot(){
   scramble($("#title"), S.name.toUpperCase());
 }
 bootEl.addEventListener("click",endBoot);
-setTimeout(endBoot,7000);
+setTimeout(endBoot,7500);
 (async()=>{
   let doneText="";
   for(let i=0;i<BOOT_LINES.length;i++){
@@ -735,11 +859,11 @@ setTimeout(endBoot,7000);
     for(let c=1;c<=line.length;c++){
       if(bootDone)return;
       blog.textContent=doneText+line.slice(0,c);
-      await sleep(5);
+      await sleep(4);
     }
     doneText+=line+"\n";
     bbar.style.width=((i+1)/BOOT_LINES.length*100)+"%";
-    await sleep(110);
+    await sleep(100);
   }
   endBoot();
 })();
