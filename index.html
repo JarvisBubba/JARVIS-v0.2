@@ -909,5 +909,23 @@ applyIdentity();
 logMsg("jarvis",`${S.name} ${P().boot}`);
 speechSynthesis.getVoices();
 </script>
+  <script>
+/* PROXIMITY SCAN: make it real — dot 1 tracks your mouse, dot 2 wanders */
+(function(){
+  const dots = document.querySelectorAll(".radar .dot");
+  if(!dots.length) return;
+  dots.forEach(d => d.style.transition = "left .4s ease, top .4s ease");
+  addEventListener("mousemove", e => {
+    const x = Math.max(0, Math.min(1, e.clientX / innerWidth));
+    const y = Math.max(0, Math.min(1, e.clientY / innerHeight));
+    dots[0].style.left = (8 + x * 84) + "%";
+    dots[0].style.top  = (8 + y * 84) + "%";
+  });
+  if(dots[1]) setInterval(() => {
+    dots[1].style.left = (15 + Math.random() * 70) + "%";
+    dots[1].style.top  = (15 + Math.random() * 70) + "%";
+  }, 2200);
+})();
+</script>
 </body>
 </html>
