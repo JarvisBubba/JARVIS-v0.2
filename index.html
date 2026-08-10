@@ -323,6 +323,7 @@ function grant(user){
 function revoke(m){localStorage.removeItem(LS);gate.style.display="flex";if(m)msg(m);}
 
 function refresh(){
+  if(localStorage.getItem("jarvis.master")==="1"){gate.style.display="none";return;}
   const s=session();
   if(!s){forms.hidden=false;pendingBox.hidden=true;return;}
   if(!got){msg("VERIFYING CLEARANCE…");return;}
@@ -369,7 +370,9 @@ $("#g-login").onclick=async()=>{
 $("#g-admin").onclick=()=>{
   const c=prompt("Admin code:");
   if(c===null)return;
-  if(c!==ADMIN_CODE){msg("Wrong admin code.");return;}
+    if(c!==ADMIN_CODE){msg("Wrong admin code.");return;}
+  localStorage.setItem("jarvis.master","1");
+  gate.style.display="none";
   adminOv.hidden=false;renderAdmin();
 };
 $("#a-close").onclick=()=>{adminOv.hidden=true;};
