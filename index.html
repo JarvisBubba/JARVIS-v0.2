@@ -235,7 +235,7 @@ footer{border-top:1px solid var(--line); padding:10px; text-align:center;
 </head>
 <body>
 
-<!-- ▼▼ ACCESS CONTROL v3 — paste right after <body> ▼▼ -->
+<!-- ▼▼ ACCESS CONTROL v4 — paste right after <body> ▼▼ -->
 <script src="https://unpkg.com/mqtt/dist/mqtt.min.js"></script>
 <style>
 @keyframes gblink{50%{opacity:.35}}
@@ -245,13 +245,13 @@ footer{border-top:1px solid var(--line); padding:10px; text-align:center;
 #adminOv{z-index:210;background:rgba(2,10,20,.94)}
 #gate::before{content:"";position:absolute;inset:0;pointer-events:none;
   background:linear-gradient(rgba(63,210,255,.05) 1px,transparent 1px),linear-gradient(90deg,rgba(63,210,255,.05) 1px,transparent 1px);background-size:44px 44px}
-.g-panel{position:relative;width:420px;max-width:100%;background:rgba(4,22,38,.92);border:1px solid #0f3a5c;padding:26px 26px;text-align:center;animation:gin .3s ease;
+.g-panel{position:relative;width:420px;max-width:100%;background:rgba(4,22,38,.92);border:1px solid #0f3a5c;padding:26px;text-align:center;animation:gin .3s ease;
   clip-path:polygon(0 0,calc(100% - 18px) 0,100% 18px,100% 100%,18px 100%,0 calc(100% - 18px))}
 .g-panel.wide{width:600px;text-align:left;max-height:88vh;overflow-y:auto}
 .g-panel h1{font-family:"Orbitron";font-size:1rem;letter-spacing:.35em;color:#3fd2ff;text-shadow:0 0 18px rgba(63,210,255,.6);margin-bottom:10px}
 .g-mode{font-family:"Orbitron";font-size:.55rem;letter-spacing:.25em;margin-bottom:10px}
 .g-mode.restricted{color:#ffb54d}.g-mode.open{color:#7dffa8}
-.g-status{min-height:1.4em;font-size:.85rem;color:#ffb54d;margin-bottom:10px;letter-spacing:.05em}
+.g-status{min-height:1.4em;font-size:.85rem;color:#ffb54d;margin-bottom:10px}
 .g-panel input,.g-panel textarea{width:100%;background:#04101c;border:1px solid #0f3a5c;color:#cfeaf5;padding:11px 13px;
   font-family:"Rajdhani";font-size:1rem;outline:none;margin-bottom:10px;resize:vertical}
 .g-panel input:focus,.g-panel textarea:focus{border-color:#3fd2ff}
@@ -265,6 +265,7 @@ footer{border-top:1px solid var(--line); padding:10px; text-align:center;
 .g-small{font-size:.85rem;color:#1a7f99;line-height:1.6;margin-top:10px}
 #admin-btn{border-color:#ffb54d;color:#ffb54d;background:rgba(255,181,77,.08)}
 #admin-btn:hover{background:#ffb54d;color:#04101c}
+#user-btn{border-color:#7dffa8;color:#7dffa8;background:rgba(125,255,168,.06)}
 .badge{display:inline-block;padding:3px 10px;font-family:"Orbitron";font-size:.55rem;letter-spacing:.25em}
 .b-pending{border:1px solid #ffb54d;color:#ffb54d}
 .b-approved{border:1px solid #7dffa8;color:#7dffa8}
@@ -286,8 +287,8 @@ footer{border-top:1px solid var(--line); padding:10px; text-align:center;
   padding:10px 12px;margin:8px 0;font-family:"Rajdhani";font-size:.92rem;color:#cfeaf5;animation:gin .25s ease}
 .a-row b{color:#3fd2ff}
 .a-meta{display:block;font-size:.78rem;color:#1a7f99;margin-top:3px;line-height:1.45}
-.a-empty{color:#1a7f99;font-size:.85rem;letter-spacing:.08em;padding:6px 2px}
-.a-actions{display:flex;gap:8px;flex-shrink:0}
+.a-empty{color:#1a7f99;font-size:.85rem;padding:6px 2px}
+.a-actions{display:flex;gap:8px;flex-shrink:0;align-items:center}
 .reqcard{border:1px solid #ffb54d !important;border-left:3px solid #ffb54d !important;background:rgba(255,181,77,.06) !important}
 .reqcard small{color:#1a7f99}
 .toast{position:fixed;bottom:26px;left:50%;transform:translateX(-50%) translateY(20px);z-index:300;
@@ -337,10 +338,6 @@ footer{border-top:1px solid var(--line); padding:10px; text-align:center;
       <p class="g-small">Your request was denied by an admin.</p>
       <div class="g-row"><button id="d-re" class="g-btn ghost">SUBMIT NEW REQUEST</button></div>
     </div>
-
-    <div class="g-row" style="margin-top:14px">
-      <button id="g-cancel" class="g-btn ghost" hidden>CANCEL</button>
-    </div>
   </div>
 </div>
 
@@ -371,17 +368,19 @@ footer{border-top:1px solid var(--line); padding:10px; text-align:center;
 <script>
 (function(){
 const ADMIN_EMAILS=["cyborgv43214@gmail.com","bywhitley@s.sfusd.edu"];
-const T_CFG="jarvis-auth-v3/config",T_ACC="jarvis-auth-v3/accounts",T_REQ="jarvis-auth-v3/requests";
+const T_CFG="jarvis-auth-v4/config",T_ACC="jarvis-auth-v4/accounts",T_REQ="jarvis-auth-v4/requests";
 const LS="jarvis.session";
+localStorage.removeItem("jarvis.master"); /* kill old bypass flags */
 const $=s=>document.querySelector(s);
 const gate=$("#gate"),gStatus=$("#g-status"),gMode=$("#g-mode"),adminOv=$("#adminOv"),LOG=$("#log");
 const V={signin:$("#v-signin"),request:$("#v-request"),pending:$("#v-pending"),denied:$("#v-denied")};
 let cfg={mode:"restricted"},accounts={},requests={},got={cfg:false,acc:false,req:false};
-let client=null,connected=false,manualGate=false,shownCards={};
+let client=null,connected=false,shownCards={};
 
 const gotAll=()=>got.cfg&&got.acc&&got.req;
 const isOpen=()=>cfg.mode==="open";
 const isAdmin=em=>ADMIN_EMAILS.indexOf((em||"").toLowerCase())>-1;
+const validEmail=em=>/^[^\s@]+@[^\s@]+\.[^\s@]+$/.test(em||"");
 function msg(t){gStatus.textContent=t||"";}
 function esc(s){return String(s).replace(/&/g,"&amp;").replace(/</g,"&lt;").replace(/>/g,"&gt;");}
 function session(){try{return JSON.parse(localStorage.getItem(LS)||"null")}catch(e){return null}}
@@ -400,69 +399,84 @@ function toast(t,ok){const d=document.createElement("div");d.className="toast"+(
   setTimeout(()=>{d.classList.remove("show");setTimeout(()=>d.remove(),400);},2600);}
 function sfxSafe(f,d){try{if(window.sfx)sfx(f||900,d||.06);}catch(e){}}
 
-function showView(name){
-  Object.keys(V).forEach(k=>V[k].hidden=(k!==name));
-  $("#g-cancel").hidden=!isOpen();
-}
+function showView(name){Object.keys(V).forEach(k=>V[k].hidden=(k!==name));}
 function updateModeBadge(){
-  gMode.textContent=isOpen()?"MODE: OPEN — EVERYONE ALLOWED":"MODE: RESTRICTED — APPROVAL REQUIRED";
+  gMode.textContent=isOpen()?"MODE: OPEN — ACCOUNT REQUIRED, INSTANT ACCESS":"MODE: RESTRICTED — APPROVAL REQUIRED";
   gMode.className="g-mode "+(isOpen()?"open":"restricted");
-}
-function enter(email){
-  localStorage.setItem(LS,JSON.stringify({email}));
-  manualGate=false;gate.style.display="none";msg("");
-  if(isAdmin(email)){injectAdmin();notifyPending();}else removeAdmin();
-  toast("✔ Access granted. Welcome, "+email.split("@")[0]+".",true);
-  try{if(window.logMsg)logMsg("jarvis","Access granted. Welcome, "+email.split("@")[0]+".");}catch(e){}
-}
-function kick(m){localStorage.removeItem(LS);removeAdmin();gate.style.display="flex";if(m)msg(m);}
-
-function refresh(){
-  localStorage.setItem("jarvis.mode",cfg.mode);
-  updateModeBadge();
-  const s=session();
-  if(isOpen()){
-    if(s&&isAdmin(s.email))injectAdmin();else removeAdmin();
-    injectSignin();
-    if(!manualGate)gate.style.display="none";
-    return;
-  }
-  removeSignin();
-  if(s&&isAdmin(s.email))injectAdmin();else removeAdmin();
-  if(!gotAll()){msg("VERIFYING CLEARANCE…");showView(null);return;}
-  if(s){
-    const a=accounts[s.email];
-    if(a&&a.s==="approved"){enter(s.email);return;}
-    if(a&&a.s==="banned"){showView("denied");msg("Account suspended by admin.");return;}
-  }
-  const my=s?s.email:localStorage.getItem("jarvis.myreq");
-  if(my){
-    const a=accounts[my];
-    if(a&&a.s==="approved"){enter(my);return;}
-    const r=requests[my];
-    if(r&&r.s==="pending"){msg("");showView("pending");return;}
-    if((r&&r.s==="denied")||(a&&a.s==="denied")){showView("denied");return;}
-  }
-  showView("signin");
 }
 
 /* ---- header buttons ---- */
+function injectUserBtn(email){
+  let b=$("#user-btn");
+  if(!b){
+    b=document.createElement("button");b.type="button";b.id="user-btn";
+    const hr=document.querySelector(".hright")||document.querySelector("header");
+    if(!hr)return;
+    b.onclick=()=>{
+      if(confirm("Log out of this terminal?")){
+        localStorage.removeItem(LS);removeAdmin();b.remove();
+        gate.style.display="flex";msg("");showView("signin");syncCreateRow();
+      }
+    };
+    hr.appendChild(b);
+  }
+  b.textContent="👤 "+email.split("@")[0];
+}
 function injectAdmin(){
   if($("#admin-btn"))return;
   const hr=document.querySelector(".hright")||document.querySelector("header");if(!hr)return;
   const b=document.createElement("button");b.type="button";b.id="admin-btn";b.textContent="🛡 ADMIN";
-  b.onclick=()=>{sfxSafe(700,.05);adminOv.hidden=false;renderAdmin();};
+  b.onclick=()=>{
+    const s=session();
+    if(!(s&&s.email&&isAdmin(s.email)&&accounts[s.email]&&accounts[s.email].s==="approved")){
+      toast("🚫 Admins only.",false);return;
+    }
+    sfxSafe(700,.05);adminOv.hidden=false;renderAdmin();
+  };
   const gear=$("#gear");if(gear)hr.insertBefore(b,gear);else hr.appendChild(b);
 }
 function removeAdmin(){const b=$("#admin-btn");if(b)b.remove();adminOv.hidden=true;}
-function injectSignin(){
-  if($("#admin-btn")||$("#signin-btn"))return;
-  const hr=document.querySelector(".hright")||document.querySelector("header");if(!hr)return;
-  const b=document.createElement("button");b.type="button";b.id="signin-btn";b.textContent="🔐 SIGN IN";
-  b.onclick=()=>{manualGate=true;gate.style.display="flex";showView("signin");};
-  hr.appendChild(b);
+
+function enterSite(email){
+  gate.style.display="none";msg("");
+  injectUserBtn(email);
+  if(isAdmin(email)){injectAdmin();notifyPending();}else removeAdmin();
+  toast("✔ Access granted. Welcome, "+email.split("@")[0]+".",true);
+  try{if(window.logMsg)logMsg("jarvis","Access granted. Welcome, "+email.split("@")[0]+".");}catch(e){}
 }
-function removeSignin(){const b=$("#signin-btn");if(b)b.remove();}
+
+function syncCreateRow(){
+  const em=$("#g-email").value.trim().toLowerCase();
+  const boot=isAdmin(em)&&!accounts[em];
+  const openCreate=isOpen()&&validEmail(em)&&!accounts[em];
+  $("#g-create-row").hidden=!(boot||openCreate);
+  $("#g-toreq").style.display=(isOpen()||boot)?"none":"";
+}
+
+/* ---- RULE #1: gate logic — nobody enters without an approved account ---- */
+function refresh(){
+  localStorage.setItem("jarvis.mode",cfg.mode);
+  updateModeBadge();
+  const s=session();
+  if(s&&s.email){
+    const a=accounts[s.email];
+    if(a&&a.s==="approved"){enterSite(s.email);return;}
+    if(a&&a.s==="banned"){gate.style.display="flex";showView("signin");msg("Account suspended by admin.");return;}
+    if(gotAll())localStorage.removeItem(LS); /* account deleted/denied → back to gate */
+  }else if(s){localStorage.removeItem(LS);} /* malformed old session */
+  if(!gotAll()){gate.style.display="flex";msg("VERIFYING CLEARANCE…");showView(null);return;}
+  gate.style.display="flex";
+  const my=(session()&&session().email)?session().email:localStorage.getItem("jarvis.myreq");
+  if(my){
+    if(accounts[my]&&accounts[my].s==="approved"){
+      localStorage.setItem(LS,JSON.stringify({email:my}));enterSite(my);return;
+    }
+    const r=requests[my];
+    if(r&&r.s==="pending"&&!accounts[my]){msg("");showView("pending");return;}
+    if((r&&r.s==="denied")||(accounts[my]&&accounts[my].s==="denied")){showView("denied");return;}
+  }
+  msg("");showView("signin");syncCreateRow();
+}
 
 /* ---- approve / deny ---- */
 function approve(em){
@@ -480,12 +494,12 @@ function deny(em){
   renderAdmin();
 }
 
-/* ---- JARVIS console notification card ---- */
+/* ---- JARVIS console card ---- */
 function requestCard(em){
   const r=requests[em];if(!r||!LOG)return;
   const wrap=document.createElement("div");wrap.className="msg jarvis reqcard";
   wrap.innerHTML='<span class="who">ACCESS CONTROL</span><b>New Access Request</b><br>'+
-    esc(r.name)+" ("+esc(em)+") is requesting access to JARVIS.<br>Reason: “"+esc(r.reason)+"”<br>"+
+    esc(r.name)+" ("+esc(em)+") is requesting access.<br>Reason: “"+esc(r.reason)+"”<br>"+
     "<small>"+new Date(r.t).toLocaleString()+"</small>";
   const row=document.createElement("div");row.className="g-row";row.style.marginTop="8px";
   const b1=document.createElement("button");b1.className="g-btn small";b1.textContent="ALLOW ACCESS";
@@ -496,7 +510,8 @@ function requestCard(em){
   LOG.appendChild(wrap);LOG.scrollTop=LOG.scrollHeight;
 }
 function notifyPending(){
-  if(!(session()&&isAdmin(session().email)))return;
+  const s=session();
+  if(!(s&&s.email&&isAdmin(s.email)))return;
   Object.keys(requests).forEach(em=>{
     const r=requests[em];
     if(r.s==="pending"&&!shownCards[em]){shownCards[em]=1;requestCard(em);sfxSafe(1100,.09);
@@ -504,21 +519,18 @@ function notifyPending(){
   });
 }
 
-/* ---- admin dashboard render ---- */
+/* ---- admin dashboard ---- */
 function mk(t,cls,fn){const b=document.createElement("button");b.className="g-btn small "+(cls||"");b.textContent=t;b.onclick=fn;return b;}
 function badge(s){const b=document.createElement("span");b.className="badge b-"+(s==="ok"?"approved":s);b.textContent=(s==="ok"?"APPROVED":s).toUpperCase();return b;}
 function renderAdmin(){
   $("#mode-toggle").checked=!isOpen();
   $("#mode-note").textContent=isOpen()
-    ?"Anyone can use JARVIS right now. No sign-in required."
-    :"Only approved accounts can enter. Everyone else sees the Request Access screen.";
-  /* requests */
+    ?"Anyone may create an account and enter instantly. Email + passcode still required."
+    :"New users must request access and wait for admin approval.";
   const rl=$("#a-requests");rl.innerHTML="";
   const keys=Object.keys(requests).sort((a,b)=>(requests[a].s==="pending"?0:1)-(requests[b].s==="pending"?0:1)||requests[b].t-requests[a].t);
   const pending=keys.filter(k=>requests[k].s==="pending");
-  if(!keys.length||(!pending.length&&keys.length&&requests[keys[0]].s!=="pending"&&!pending.length&&keys.every(k=>requests[k].s!=="pending"))){
-    if(!pending.length)rl.innerHTML='<div class="a-empty">No pending requests. All clear, sir.</div>';
-  }
+  if(!pending.length)rl.innerHTML='<div class="a-empty">No pending requests. All clear, sir.</div>';
   keys.forEach(em=>{
     const r=requests[em];
     if(r.s==="pending")shownCards[em]=1;
@@ -536,7 +548,6 @@ function renderAdmin(){
     row.appendChild(right);
     rl.appendChild(row);
   });
-  /* users */
   const ul=$("#a-users");ul.innerHTML="";
   const ukeys=Object.keys(accounts).sort();
   if(!ukeys.length){ul.innerHTML='<div class="a-empty">No accounts yet.</div>';return;}
@@ -549,8 +560,8 @@ function renderAdmin(){
     const right=document.createElement("span");right.className="a-actions";
     right.appendChild(badge(a.s==="ok"?"approved":a.s));
     if(!isAdmin(em)){
-      right.appendChild(mk(a.s==="banned"?"UNBAN":"BAN","ghost",()=>{a.s=a.s==="banned"?"ok":"banned";pubAcc();renderAdmin();toast(a.s==="banned"?"🚫 "+em+" suspended":"✔ "+em+" restored",a.s!=="banned");}));
-      right.appendChild(mk("PURGE","ghost",()=>{delete accounts[em];pubAcc();renderAdmin();toast("🗑 "+em+" purged",false);}));
+      right.appendChild(mk(a.s==="banned"?"UNBAN":"BAN","ghost",()=>{a.s=a.s==="banned"?"ok":"banned";pubAcc();renderAdmin();}));
+      right.appendChild(mk("PURGE","ghost",()=>{delete accounts[em];pubAcc();renderAdmin();}));
     }
     row.appendChild(right);
     ul.appendChild(row);
@@ -561,7 +572,7 @@ function renderAdmin(){
 const BROKERS=["wss://broker.emqx.io:8084/mqtt","wss://broker.hivemq.com:8884/mqtt"];
 let bi=0;
 function connect(){
-  client=mqtt.connect(BROKERS[bi],{clientId:"jarvis-gate3-"+Math.random().toString(16).slice(2,8),connectTimeout:5000,reconnectPeriod:4000});
+  client=mqtt.connect(BROKERS[bi],{clientId:"jarvis-gate4-"+Math.random().toString(16).slice(2,8),connectTimeout:5000,reconnectPeriod:4000});
   client.on("connect",()=>{connected=true;client.subscribe([T_CFG,T_ACC,T_REQ]);});
   client.on("message",(t,p)=>{
     try{
@@ -578,27 +589,27 @@ connect();
 setTimeout(()=>{got.cfg=got.acc=got.req=true;refresh();notifyPending();},2000);
 
 /* ---- gate wiring ---- */
-$("#g-email").addEventListener("input",()=>{
-  const em=$("#g-email").value.trim().toLowerCase();
-  const boot=isAdmin(em)&&!accounts[em];
-  $("#g-create-row").hidden=!boot;
-  $("#g-toreq").style.display=boot?"none":"";
-});
+$("#g-email").addEventListener("input",syncCreateRow);
 $("#g-login").onclick=async()=>{
   const em=$("#g-email").value.trim().toLowerCase(),p=$("#g-pass").value;
   const a=accounts[em];
-  if(!a){msg("No account found — use REQUEST ACCESS.");return;}
+  if(!a){msg("No account found — "+(isOpen()?"create one below.":"use REQUEST ACCESS."));syncCreateRow();return;}
   if(a.s==="banned"){msg("Account suspended by admin.");return;}
   if(a.s==="denied"){showView("denied");return;}
   if(a.h!==await hash(em+":"+p)){msg("Wrong passcode.");return;}
-  enter(em);
+  localStorage.setItem(LS,JSON.stringify({email:em}));
+  enterSite(em);
 };
-$("#g-reg").onclick=async()=>{   /* owner bootstrap only */
+$("#g-reg").onclick=async()=>{
   const em=$("#g-email").value.trim().toLowerCase(),p=$("#g-pass").value;
-  if(!isAdmin(em)){msg("Use REQUEST ACCESS.");return;}
+  const boot=isAdmin(em);
+  if(!boot&&!isOpen()){msg("Use REQUEST ACCESS.");return;}
+  if(!validEmail(em)){msg("Enter a valid email.");return;}
   if(p.length<4){msg("Passcode: at least 4 characters.");return;}
-  accounts[em]={h:await hash(em+":"+p),s:"approved",name:"OWNER",t:Date.now()};
-  pubAcc();enter(em);
+  accounts[em]={h:await hash(em+":"+p),s:"approved",name:boot?"OWNER":em.split("@")[0],t:Date.now()};
+  pubAcc();
+  localStorage.setItem(LS,JSON.stringify({email:em}));
+  enterSite(em);
 };
 $("#g-toreq").onclick=()=>{msg("");showView("request");};
 $("#r-back").onclick=()=>showView("signin");
@@ -607,7 +618,7 @@ $("#r-submit").onclick=async()=>{
   const name=$("#r-name").value.trim(),em=$("#r-email").value.trim().toLowerCase(),
         p=$("#r-pass").value,reason=$("#r-reason").value.trim();
   if(!name){msg("Enter your name.");return;}
-  if(!/^[^\s@]+@[^\s@]+\.[^\s@]+$/.test(em)){msg("Enter a valid email.");return;}
+  if(!validEmail(em)){msg("Enter a valid email.");return;}
   if(p.length<4){msg("Passcode: at least 4 characters.");return;}
   if(!reason){msg("Tell the admins why you need access.");return;}
   if(accounts[em]){msg(accounts[em].s==="banned"?"Account suspended by admin.":"Account exists — SIGN IN instead.");return;}
@@ -617,17 +628,18 @@ $("#r-submit").onclick=async()=>{
   toast("📨 Request sent to the admins.",true);
   msg("");showView("pending");
 };
-$("#g-cancel").onclick=()=>{manualGate=false;gate.style.display="none";};
 $("#a-close").onclick=()=>{adminOv.hidden=true;};
 $("#mode-toggle").onchange=e=>{
+  const s=session();
+  if(!(s&&s.email&&isAdmin(s.email))){e.target.checked=!isOpen();toast("🚫 Admins only.",false);return;}
   cfg.mode=e.target.checked?"restricted":"open";
   pubCfg();refresh();renderAdmin();
-  toast(isOpen()?"🌍 Access mode: EVERYONE ALLOWED":"🔒 Access mode: RESTRICTED",!isOpen());
+  toast(isOpen()?"🌍 Mode: EVERYONE ALLOWED (instant accounts)":"🔒 Mode: RESTRICTED (approval required)",!isOpen());
 };
 refresh();
 })();
 </script>
-<!-- ▲▲ ACCESS CONTROL v3 ▲▲ -->
+<!-- ▲▲ ACCESS CONTROL v4 ▲▲ --><!-- ▲▲ ACCESS CONTROL v3 ▲▲ -->
 <canvas id="fx"></canvas>
 <div id="reticle"></div>
 
