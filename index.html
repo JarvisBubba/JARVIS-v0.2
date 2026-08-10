@@ -222,5 +222,195 @@ applyIdentity();logMsg("jarvis",`${S.name} ${P().boot}`);speechSynthesis.getVoic
 <script>
 (function(){const dots=document.querySelectorAll(".radar .dot");if(!dots.length)return;dots.forEach(d=>d.style.transition="left .4s ease, top .4s ease");addEventListener("mousemove",e=>{const x=Math.max(0,Math.min(1,e.clientX/innerWidth));const y=Math.max(0,Math.min(1,e.clientY/innerHeight));dots[0].style.left=(8+x*84)+"%";dots[0].style.top=(8+y*84)+"%";});if(dots[1])setInterval(()=>{dots[1].style.left=(15+Math.random()*70)+"%";dots[1].style.top=(15+Math.random()*70)+"%";},2200);})();
 </script>
+  <!-- ▼▼ MARK VIII UPGRADE PACK — paste right above </body> ▼▼ -->
+<style>
+#trail{position:fixed;inset:0;z-index:65;pointer-events:none}
+#flash{position:fixed;inset:0;background:#eaffff;opacity:0;pointer-events:none;z-index:98;transition:opacity .6s}
+.boot-title{font-family:"Orbitron";font-size:1.4rem;letter-spacing:.6em;color:var(--cyan);text-shadow:0 0 30px rgba(63,210,255,.8);animation:blink 1.2s infinite}
+.boot-ring{width:180px;height:180px}
+.boot-ring circle{fill:none;stroke:var(--cyan);stroke-width:1.2;stroke-dasharray:520;stroke-dashoffset:520;animation:draw 2.2s ease forwards}
+.boot-ring circle:nth-child(2){stroke:var(--amber);animation-delay:.4s}
+@keyframes draw{to{stroke-dashoffset:0}}
+.p-chip{font-family:"Orbitron";font-size:.55rem;letter-spacing:.15em;color:#7dffa8;border:1px solid #7dffa8;padding:4px 8px;background:rgba(125,255,168,.07)}
+.tgt{position:fixed;width:48px;height:48px;margin:-24px 0 0 -24px;border:2px solid var(--red);border-radius:50%;z-index:75;cursor:crosshair;animation:tpulse 1s infinite;box-shadow:0 0 14px rgba(255,93,93,.5)}
+.tgt i{position:absolute;left:50%;top:50%;width:8px;height:8px;margin:-4px;background:var(--red);border-radius:50%}
+@keyframes tpulse{50%{transform:scale(1.12)}}
+#bcast{position:fixed;top:70px;left:50%;transform:translateX(-50%) translateY(-20px);z-index:220;opacity:0;transition:.4s;border:1px solid var(--amber);background:rgba(20,10,2,.92);color:var(--amber);font-family:"Orbitron";font-size:.7rem;letter-spacing:.2em;padding:12px 22px;clip-path:polygon(12px 0,calc(100% - 12px) 0,100% 12px,100% 100%,12px 100%,0 calc(100% - 12px))}
+#bcast.on{opacity:1;transform:translateX(-50%) translateY(0)}
+#idOv{position:fixed;inset:0;z-index:230;background:rgba(2,10,20,.94);display:flex;align-items:center;justify-content:center;flex-direction:column;gap:14px}
+#idOv[hidden]{display:none}
+#idOv canvas{max-width:92vw;border:1px solid var(--line)}
+body[data-t="dawn"]{--cyan:#6fe8c8;--cyan-dim:#1a997f}
+body[data-t="dusk"]{--cyan:#8fb7ff;--cyan-dim:#3a5f99}
+body[data-t="night"]{--cyan:#5ea8ff;--cyan-dim:#1a4f99}
+</style>
+<script>
+(function(){
+const $q=s=>document.querySelector(s);
+const ADMINS=["cyborgv43214@gmail.com","bywhitley@s.sfusd.edu"];
+const sess=(()=>{try{return JSON.parse(localStorage.getItem("jarvis.session")||"null")}catch(e){return null}})();
+const myName=(sess&&sess.email)?sess.email.split("@")[0]:("guest-"+Math.random().toString(36).slice(2,6));
+const isAdm=!!(sess&&sess.email&&ADMINS.indexOf(sess.email.toLowerCase())>-1);
+if(!localStorage.getItem("jarvis.since"))localStorage.setItem("jarvis.since",Date.now());
+
+/* ---------- achievements ---------- */
+const ACH={boot:"FIRST LIGHT",konami:"STARK LEGACY",surge5:"OVERCHARGE",msg10:"CONVERSATIONALIST",hit10:"MARKSMAN",cast:"COMMAND VOICE",night:"NIGHT OWL",id:"IDENTIFIED"};
+let ach=(()=>{try{return JSON.parse(localStorage.getItem("jarvis.ach")||"{}")}catch(e){return{}}})();
+function unlock(id){if(ach[id])return;ach[id]=1;localStorage.setItem("jarvis.ach",JSON.stringify(ach));toast("🏆 UNLOCKED: "+ACH[id],true);try{sfx(880,.08);setTimeout(()=>sfx(1320,.1),100);}catch(e){}}
+
+/* ---------- 12) time-of-day theme ---------- */
+function theme(){const h=new Date().getHours();const t=h<5?"night":h<8?"dawn":h<17?"day":h<21?"dusk":"night";document.body.dataset.t=t;if(t==="night")unlock("night");}
+theme();setInterval(theme,60000);
+
+/* ---------- 12) reactor hum ---------- */
+let humOn=localStorage.getItem("jarvis.hum")==="1",humN=null;
+function humStart(){if(humN||!window.AudioContext)return;try{const a=new AudioContext();const g=a.createGain();g.gain.value=.025;const f=a.createBiquadFilter();f.type="lowpass";f.frequency.value=220;const o1=a.createOscillator();o1.frequency.value=55;const o2=a.createOscillator();o2.frequency.value=57.3;o1.connect(f);o2.connect(f);f.connect(g);g.connect(a.destination);o1.start();o2.start();humN={a,o1,o2};}catch(e){}}
+function humStop(){if(humN){try{humN.o1.stop();humN.o2.stop();humN.a.close();}catch(e){}humN=null;}}
+const humBtn=document.createElement("button");humBtn.type="button";humBtn.textContent=humOn?" HUM":"🔇 HUM";
+humBtn.onclick=()=>{humOn=!humOn;localStorage.setItem("jarvis.hum",humOn?"1":"0");humBtn.textContent=humOn?"🔊 HUM":"🔇 HUM";humOn?humStart():humStop();};
+$q(".hright").insertBefore(humBtn,$q("#target-btn"));
+addEventListener("pointerdown",()=>{if(humOn)humStart();},{once:true});
+
+/* ---------- 3) repulsor cursor trail ---------- */
+const tc=document.createElement("canvas");tc.id="trail";document.body.appendChild(tc);
+const tx=tc.getContext("2d");let TP=[];function tResize(){tc.width=innerWidth;tc.height=innerHeight;}addEventListener("resize",tResize);tResize();
+addEventListener("mousemove",e=>{for(let i=0;i<2;i++)TP.push({x:e.clientX,y:e.clientY,vx:(Math.random()-.5)*2,vy:(Math.random()-.5)*2,l:1});});
+addEventListener("click",e=>{TP.push({x:e.clientX,y:e.clientY,ring:1,l:1});});
+(function tTick(){tx.clearRect(0,0,tc.width,tc.height);TP=TP.filter(p=>p.l>0);for(const p of TP){p.l-=.03;if(p.ring){tx.strokeStyle=`rgba(63,210,255,${p.l})`;tx.beginPath();tx.arc(p.x,p.y,(1-p.l)*60,0,7);tx.stroke();}else{p.x+=p.vx;p.y+=p.vy;tx.fillStyle=`rgba(63,210,255,${p.l})`;tx.fillRect(p.x,p.y,2,2);}}requestAnimationFrame(tTick);})();
+
+/* ---------- 2) Three.js 3D holo core ---------- */
+function initHolo(){const THREE=window.THREE;if(!THREE||!$q(".orb"))return;
+ document.querySelectorAll(".orb .tri").forEach(e=>e.style.display="none");
+ const c=document.createElement("canvas");c.style.cssText="position:absolute;inset:0;width:100%;height:100%";$q(".orb").appendChild(c);
+ const R=new THREE.WebGLRenderer({canvas:c,alpha:true,antialias:true});R.setSize(290,290);
+ const sc=new THREE.Scene(),cam=new THREE.PerspectiveCamera(50,1,.1,10);cam.position.z=4;
+ const matC=new THREE.MeshBasicMaterial({color:0x3fd2ff,wireframe:true,transparent:true,opacity:.9});
+ const core=new THREE.Mesh(new THREE.IcosahedronGeometry(1.1,1),matC);
+ const r1=new THREE.Mesh(new THREE.TorusGeometry(1.7,.02,8,60),new THREE.MeshBasicMaterial({color:0x3fd2ff,wireframe:true,transparent:true,opacity:.35}));
+ const r2=new THREE.Mesh(new THREE.TorusGeometry(2.1,.015,8,60),new THREE.MeshBasicMaterial({color:0xffb54d,wireframe:true,transparent:true,opacity:.3}));
+ r1.rotation.x=1.2;r2.rotation.x=-1.1;
+ const pg=new THREE.BufferGeometry(),N=120,pos=new Float32Array(N*3);
+ for(let i=0;i<N;i++){const r=2.4+Math.random()*.8,a=Math.random()*6.28,b=Math.acos(2*Math.random()-1);pos[i*3]=r*Math.sin(b)*Math.cos(a);pos[i*3+1]=r*Math.sin(b)*Math.sin(a);pos[i*3+2]=r*Math.cos(b);}
+ pg.setAttribute("position",new THREE.BufferAttribute(pos,3));
+ const pts=new THREE.Points(pg,new THREE.PointsMaterial({color:0x3fd2ff,size:.03,transparent:true,opacity:.7}));
+ sc.add(core,r1,r2,pts);let spd=1,burst=0;
+ $q(".orb").addEventListener("click",()=>burst=6);
+ (function loop(){requestAnimationFrame(loop);
+  const base=$q(".orb").classList.contains("speaking")?3:$q(".orb").classList.contains("listening")?1.6:1;
+  const alarm=$q(".orb").classList.contains("alarm");
+  matC.color.set(alarm?0xff5d5d:(document.body.classList.contains("stark")?0xffc24d:0x3fd2ff));
+  burst*=.94;spd+=(base+burst-spd)*.1;
+  core.rotation.y+=.01*spd;core.rotation.x+=.004*spd;r1.rotation.z+=.008*spd;r2.rotation.z-=.006*spd;pts.rotation.y+=.002*spd;
+  const s=1+Math.sin(Date.now()/500)*.05*spd;core.scale.set(s,s,s);
+  R.render(sc,cam);})();}
+const t3=document.createElement("script");t3.src="https://unpkg.com/three@0.152.2/build/three.min.js";t3.onload=initHolo;document.head.appendChild(t3);
+
+/* ---------- 1) boot cinematic + flash ---------- */
+const boot=$q("#boot");
+if(boot){boot.insertAdjacentHTML("afterbegin",'<div class="boot-title">MARK VIII</div><svg class="boot-ring" viewBox="0 0 200 200"><circle cx="100" cy="100" r="80"/><circle cx="100" cy="100" r="60"/></svg>');
+ const fl=document.createElement("div");fl.id="flash";document.body.appendChild(fl);
+ new MutationObserver(()=>{if(boot.classList.contains("done")){fl.style.opacity=.75;setTimeout(()=>fl.style.opacity=0,120);}}).observe(boot,{attributes:true,attributeFilter:["class"]});}
+
+/* ---------- 7) presence (agents online) ---------- */
+const pid=Math.random().toString(36).slice(2,8);let pres={};
+const pBox=document.createElement("span");pBox.style.cssText="display:flex;gap:6px";$q(".hright").insertBefore(pBox,humBtn);
+if(window.mqtt){const pc=mqtt.connect("wss://broker.emqx.io:8084/mqtt",{clientId:"jarvis-p-"+pid,connectTimeout:5000,reconnectPeriod:4000});
+ pc.on("connect",()=>{pc.subscribe("jarvis-v4/presence");setInterval(()=>{try{pc.publish("jarvis-v4/presence",JSON.stringify({id:pid,name:myName,ts:Date.now()}));}catch(e){}},4000);});
+ pc.on("message",(t,p)=>{if(t!=="jarvis-v4/presence")return;try{const m=JSON.parse(p.toString());pres[m.id]=m;}catch(e){}
+  const now=Date.now();Object.keys(pres).forEach(k=>{if(now-pres[k].ts>12000)delete pres[k];});
+  const names=[...new Set(Object.values(pres).map(x=>x.name))].slice(0,5);
+  pBox.innerHTML=names.map(n=>'<span class="p-chip">● '+n.replace(/[<>&]/g,"")+"</span>").join("");});}
+
+/* ---------- 8) admin broadcast ---------- */
+const bc=document.createElement("div");bc.id="bcast";document.body.appendChild(bc);
+let lastBc=0;
+function showBc(text){bc.textContent="📡 "+text;bc.classList.add("on");try{sfx(1100,.1);}catch(e){}setTimeout(()=>bc.classList.remove("on"),6000);}
+if(window.mqtt){const bcC=mqtt.connect("wss://broker.hivemq.com:8884/mqtt",{clientId:"jarvis-b-"+pid,connectTimeout:5000,reconnectPeriod:4000});
+ bcC.on("connect",()=>bcC.subscribe("jarvis-v4/broadcast"));
+ bcC.on("message",(t,p)=>{if(t!=="jarvis-v4/broadcast")return;try{const m=JSON.parse(p.toString());if(m.ts>lastBc){lastBc=m.ts;showBc(m.text);}}catch(e){}});
+ if(isAdm){const card=document.createElement("div");card.className="a-card";
+  card.innerHTML='<h2>BROADCAST</h2><div style="display:flex;gap:8px"><input id="bc-text" placeholder="Site-wide announcement" style="flex:1;background:#04101c;border:1px solid #0f3a5c;color:#cfeaf5;padding:10px;font-family:Rajdhani"><button id="bc-send" class="g-btn small">SEND</button></div>';
+  const ao=$q("#adminOv .g-panel");ao.insertBefore(card,ao.querySelector(".g-row"));
+  setTimeout(()=>{const b=$q("#bc-send");if(b)b.onclick=()=>{const v=$q("#bc-text").value.trim();if(!v)return;bcC.publish("jarvis-v4/broadcast",JSON.stringify({text:v,ts:Date.now()}),{retain:true});unlock("cast");showBc(v);};},500);}}
+
+/* ---------- 6) real telemetry (weather + ISS) ---------- */
+const rowsEl=$q("#pkt")?$q("#pkt").closest(".rows"):null;
+if(rowsEl)rowsEl.insertAdjacentHTML("beforeend",'<div><span>ISS</span><b id="iss">--</b></div>');
+if(navigator.geolocation)navigator.geolocation.getCurrentPosition(async p=>{try{
+ const f=await(await fetch("https://api.open-meteo.com/v1/forecast?latitude="+p.coords.latitude+"&longitude="+p.coords.longitude+"&current=temperature_2m,relative_humidity_2m")).json();
+ $q("#temp").textContent=Math.round(f.current.temperature_2m)+"°C";$q("#hum").textContent=Math.round(f.current.relative_humidity_2m)+"%";
+ const sub=$q("#temp").closest(".big").querySelector(".sub");if(sub)sub.textContent="LOCAL TEMP (LIVE)";}catch(e){}},()=>{},{timeout:8000});
+setInterval(async()=>{try{const d=await(await fetch("https://api.wheretheiss.at/v1/satellites/25544")).json();const el=$q("#iss");if(el)el.textContent=Math.round(d.altitude)+"km · "+Math.round(d.velocity)+"km/h";}catch(e){}},8000);
+
+/* ---------- 9) repulsor target practice ---------- */
+let tgtTimer=null,score=0,hits=0,lb={};
+function spawnTgt(){const d=document.createElement("div");d.className="tgt";d.style.left=(10+Math.random()*80)+"vw";d.style.top=(15+Math.random()*70)+"vh";d.innerHTML="<i></i>";
+ d.onclick=e=>{e.stopPropagation();hits++;score+=100;try{sfx(1600,.05);}catch(e2){}d.remove();if(hits>=10)unlock("hit10");};
+ document.body.appendChild(d);setTimeout(()=>d.remove(),2200);}
+const _setTarget=setTarget;
+setTarget=function(on){_setTarget(on);
+ if(on){score=0;hits=0;tgtTimer=setInterval(spawnTgt,1100);}
+ else{clearInterval(tgtTimer);document.querySelectorAll(".tgt").forEach(x=>x.remove());
+  if(score>0){logMsg("jarvis","🎯 Session score: "+score+" pts.");
+   if(window.mqtt&&connected!==undefined){} }}
+};
+/* ---------- 4) conversational memory ---------- */
+let mem=(()=>{try{return JSON.parse(localStorage.getItem("jarvis.mem")||"[]")}catch(e){return[]}})();
+function pushMem(r,t){mem.push({r,t:t.slice(0,200)});if(mem.length>10)mem.shift();localStorage.setItem("jarvis.mem",JSON.stringify(mem));}
+const _handle=handle;
+handle=async function(t){pushMem("user",t);const r=await _handle(t);if(r)pushMem("jarvis",r);return r;};
+const _llm=llm;
+llm=async function(q){const ctx=mem.slice(-6).map(m=>m.r+": "+m.t).join(" | ");return _llm(q+"\n\nMEMORY(context): "+ctx);};
+
+/* ---------- 11) achievements hooks ---------- */
+const _logMsg=logMsg;let msgCnt=0;
+logMsg=function(w,t){if(w==="user"){msgCnt++;if(msgCnt>=10)unlock("msg10");}return _logMsg(w,t);};
+const _stark=starkMode;starkMode=function(){_stark();unlock("konami");};
+new MutationObserver(()=>{if($q("#gate").style.display==="none")unlock("boot");}).observe($q("#gate"),{attributes:true,attributeFilter:["style"]});
+let surgeCnt=0;$q(".orb").addEventListener("click",()=>{surgeCnt++;if(surgeCnt>=5)unlock("surge5");});
+
+/* ---------- 10) Stark ID card ---------- */
+const idOv=document.createElement("div");idOv.id="idOv";idOv.hidden=true;
+idOv.innerHTML='<canvas id="idc" width="640" height="400"></canvas><div class="g-row"><button id="id-dl" class="g-btn">DOWNLOAD</button><button id="id-x" class="g-btn ghost">CLOSE</button></div>';
+document.body.appendChild(idOv);
+const idBtn=document.createElement("button");idBtn.type="button";idBtn.textContent="🪪 ID";
+idBtn.onclick=()=>{idOv.hidden=false;drawId();unlock("id");};
+$q(".hright").insertBefore(idBtn,humBtn);
+$q("#id-x").onclick=()=>idOv.hidden=true;
+$q("#id-dl").onclick=()=>{const a=document.createElement("a");a.download="stark-id.png";a.href=$q("#idc").toDataURL("image/png");a.click();};
+function drawId(){const c=$q("#idc"),x=c.getContext("2d");
+ const g=x.createLinearGradient(0,0,640,400);g.addColorStop(0,"#04101c");g.addColorStop(1,"#0a2a44");x.fillStyle=g;x.fillRect(0,0,640,400);
+ x.strokeStyle="rgba(63,210,255,.15)";for(let i=0;i<640;i+=32){x.beginPath();x.moveTo(i,0);x.lineTo(i,400);x.stroke();}for(let i=0;i<400;i+=32){x.beginPath();x.moveTo(0,i);x.lineTo(640,i);x.stroke();}
+ x.strokeStyle="#3fd2ff";x.lineWidth=2;x.strokeRect(10,10,620,380);
+ x.fillStyle="#3fd2ff";x.font="700 22px Orbitron, sans-serif";x.fillText("STARK INDUSTRIES",30,52);
+ x.font="12px Orbitron, sans-serif";x.fillStyle="#1a7f99";x.fillText("CLEARANCE CARD // MARK VIII",30,74);
+ x.fillStyle="#ffb54d";x.font="700 34px Orbitron, sans-serif";x.fillText(myName.toUpperCase(),30,140);
+ x.fillStyle=isAdm?"#7dffa8":"#3fd2ff";x.font="16px Orbitron, sans-serif";x.fillText(isAdm?"CLEARANCE: OWNER (LEVEL 10)":"CLEARANCE: AGENT",30,172);
+ x.fillStyle="#cfeaf5";x.font="14px Rajdhani, sans-serif";
+ x.fillText("SINCE: "+new Date(+localStorage.getItem("jarvis.since")).toLocaleDateString(),30,210);
+ x.fillText("CONSOLE MESSAGES: "+msgCnt,30,234);
+ x.fillText("BADGES: "+Object.keys(ach).length+" / "+Object.keys(ACH).length,30,258);
+ x.fillText("MODE: "+(localStorage.getItem("jarvis.mode")||"restricted").toUpperCase(),30,282);
+ x.fillStyle="#3fd2ff";x.beginPath();x.moveTo(540,240);x.lineTo(470,120);x.lineTo(610,120);x.closePath();x.fill();
+ x.fillStyle="#04101c";x.beginPath();x.moveTo(540,225);x.lineTo(487,132);x.lineTo(593,132);x.closePath();x.fill();
+ x.fillStyle="#eafcff";x.beginPath();x.moveTo(540,210);x.lineTo(500,142);x.lineTo(580,142);x.closePath();x.fill();
+ x.fillStyle="#1a7f99";for(let i=0;i<40;i++){x.fillRect(30+i*8,330,(i*7)%3+1,40);}}
+
+/* ---------- 5) wake word ---------- */
+const SR2=window.SpeechRecognition||window.webkitSpeechRecognition;
+let wakeOn=false,wrec=null;
+const wakeBtn=document.createElement("button");wakeBtn.type="button";wakeBtn.textContent="🎙 WAKE";
+wakeBtn.onclick=()=>{if(!SR2){toast("Browser lacks speech recognition.",false);return;}
+ wakeOn=!wakeOn;wakeBtn.style.borderColor=wakeOn?"#7dffa8":"";wakeBtn.style.color=wakeOn?"#7dffa8":"";
+ if(wakeOn){wrec=new SR2();wrec.lang="en-US";wrec.interimResults=false;wrec.continuous=true;
+  wrec.onresult=e=>{const t=e.results[e.results.length-1][0].transcript.toLowerCase();
+   if(t.includes("hey jarvis")||t.includes("hey "+(S.name||"").toLowerCase())){try{sfx(1400,.08);}catch(e2){}toast("🎙 Awake, "+myName+".",true);$q("#orb").classList.add("listening");try{if(rec&&!rec.started)rec.start();}catch(e2){}$q("#input").focus();}};
+  wrec.onend=()=>{if(wakeOn)setTimeout(()=>{try{wrec.start();}catch(e){}},400);};
+  try{wrec.start();}catch(e){}toast("🎙 Wake word armed. Say “Hey JARVIS”.",true);}
+  else{try{wrec.stop();}catch(e){}$q("#orb").classList.remove("listening");}};
+$q(".hright").insertBefore(wakeBtn,humBtn);
+})();
+</script>
+<!-- ▲▲ MARK VIII UPGRADE PACK ▲▲ -->
 </body>
 </html>
