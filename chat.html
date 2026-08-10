@@ -57,34 +57,11 @@ button.send:hover{background:rgba(63,210,255,.25);color:#eaffff;box-shadow:0 0 1
 
 <script>
 (function(){
-  var s = null;
-  try { s = JSON.parse(localStorage.getItem("jarvis.session") || "null"); } catch (e) {}
-  if (!s) location.replace("index.html");
+  var mode = localStorage.getItem("jarvis.mode") || "restricted";
+  var s = null; try { s = JSON.parse(localStorage.getItem("jarvis.session") || "null"); } catch (e) {}
+  if (mode !== "open" && !s) location.replace("index.html");
 })();
 </script>
-  
-<header>
-  <span class="logo">J.A.R.V.I.S.</span>
-  <span id="uplink" data-state="CONNECTING">UPLINK: <b>CONNECTING…</b></span>
-  <a class="hud-btn" href="index.html">⬅ Back to Console</a>
-</header>
-
-<main>
-  <section class="panel">
-    <h2>COMMS CHANNEL — PEOPLE CHAT · NO SERVER REQUIRED</h2>
-    <div id="chat"></div>
-    <div class="bar">
-      <input id="channel-input" maxlength="20" placeholder="CHANNEL" autocomplete="off">
-      <input id="name-input" maxlength="24" placeholder="CALLSIGN" autocomplete="off">
-    </div>
-    <div class="bar">
-      <input id="text-input" maxlength="500" placeholder="Transmit a message…" autocomplete="off">
-      <button class="send" id="send-btn">Send</button>
-    </div>
-  </section>
-</main>
-
-<script>
 const chat = document.getElementById("chat");
 const uplink = document.getElementById("uplink");
 const channelInput = document.getElementById("channel-input");
