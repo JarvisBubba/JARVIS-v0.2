@@ -1366,6 +1366,59 @@ if(typeof route==="function"){const _r=route;route=async function(t){const a=awa
 })();
 </script>
 <!-- ▲▲ MARK XVI REACTIVE DECK ▲▲ -->
+
+<!-- ▼▼ VOICE FIX FINAL — paste right above </body> ▼▼ -->
+<script>
+(function(){
+const $q=s=>document.querySelector(s);
+if(!("speechSynthesis" in window)){try{logMsg("jarvis","🔊 This browser has NO speech engine. Use Chrome or Edge, sir.");}catch(e){}return;}
+const hasS=typeof S!=="undefined";
+/* 1) force all sound ON and sync the settings panel */
+if(hasS){S.voice=true;S.sfx=true;try{saveSettings();}catch(e){}
+ const v=$q("#s-voice");if(v)v.checked=true;const x=$q("#s-sfx");if(x)x.checked=true;}
+/* 2) voice loading */
+let VOICES=[];const lv=()=>{VOICES=speechSynthesis.getVoices();};lv();
+speechSynthesis.onvoiceschanged=lv;
+const best=()=>VOICES.find(v=>/en-GB/i.test(v.lang)&&/male|daniel|george|arthur/i.test(v.name))||VOICES.find(v=>/en-GB/i.test(v.lang))||VOICES.find(v=>v.lang&&v.lang.startsWith("en"))||VOICES[0]||null;
+/* 3) browser gesture gate + queue */
+let gest=false,saidHi=false;const q=[];
+function raw(text){
+ const u=new SpeechSynthesisUtterance(String(text).replace(/[^\x00-\x7F]/g,""));
+ const v=best();if(v)u.voice=v;
+ u.rate=.95;u.pitch=.85;u.volume=1;
+ const o=$q("#orb"),st=$q("#state");
+ u.onstart=()=>{if(o)o.classList.add("speaking");if(st)st.textContent="SPEAKING";};
+ u.onend=u.onerror=()=>{if(o)o.classList.remove("speaking");if(st&&!o.classList.contains("alarm"))st.textContent="STANDBY";
+  if(localStorage.getItem("jarvis.convo")==="1"){setTimeout(()=>{if(typeof rec!=="undefined"){try{rec.start();if(o)o.classList.add("listening");}catch(e){}}},400);}};
+ speechSynthesis.cancel();
+ setTimeout(()=>{try{speechSynthesis.resume();speechSynthesis.speak(u);}catch(e){}},80);
+}
+function unlock(){if(gest)return;gest=true;
+ try{speechSynthesis.resume();}catch(e){}
+ if(typeof AC!=="undefined"&&AC){try{AC.resume();}catch(e){}}
+ while(q.length)raw(q.shift());
+ if(!saidHi){saidHi=true;raw("Voice systems fully restored, sir.");}}
+addEventListener("pointerdown",unlock);addEventListener("keydown",unlock);
+/* 4) THE fixed speak() */
+window.speak=function(text){
+ if(hasS&&S.voice===false)return;
+ if(!gest)q.push(text);else raw(text);
+};
+/* 5) test button + diagnostics */
+if(!$q("#vfix-btn")){
+ const b=document.createElement("button");b.type="button";b.id="vfix-btn";b.textContent="🔊 VOICE";
+ b.onclick=()=>{unlock();window.speak("Voice test. All audio channels nominal, sir.");
+  try{logMsg("jarvis","🔊 Diag: engines="+(VOICES.length||"loading")+" voices · gesture="+gest+" · voiceSetting="+(hasS?S.voice:"?"));}catch(e){}};
+ const hr=$q(".hright");if(hr)hr.insertBefore(hr.firstChild,hr.firstChild),hr.insertBefore(b,hr.firstChild);
+}
+/* 6) voice commands */
+if(typeof route==="function"){const _r=route;route=async function(t){const low=String(t).toLowerCase();
+ if(low.includes("test voice")){unlock();window.speak("Voice systems online. How does this sound, sir?");return null;}
+ if(low.includes("voice on")){if(hasS){S.voice=true;saveSettings();}return "Voice enabled, sir.";}
+ return _r(t);};}
+})();
+</script>
+<!-- ▲▲ VOICE FIX FINAL ▲▲ -->
   
 </body>
 </html>
