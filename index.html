@@ -581,6 +581,136 @@ ov.addEventListener("click",e=>{if(e.target===ov)ov.hidden=true;});
 })();
 </script>
 <!-- ▲▲ MARK X COMMAND DECK ▲▲ -->
+
+<!-- ▼▼ MARK XI PLAYDECK — paste right above </body> ▼▼ -->
+<style>
+body[data-suit="mark3"]{--cyan:#ff6b4d;--cyan-dim:#b03a1c}
+body[data-suit="war"]{--cyan:#aebfcc;--cyan-dim:#5e6f7c;--amber:#ff2d55}
+body[data-suit="stealth"]{--cyan:#39ff8e;--cyan-dim:#0f9950;--amber:#b6ff5e}
+.ovl{position:fixed;inset:0;z-index:195;background:rgba(2,10,20,.92);display:flex;align-items:center;justify-content:center;padding:20px}
+.ovl[hidden]{display:none}
+.gm-panel{width:680px;max-width:96vw;max-height:92vh;overflow-y:auto;background:rgba(4,22,38,.95);border:1px solid var(--line);padding:20px;clip-path:polygon(0 0,calc(100% - 18px) 0,100% 18px,100% 100%,18px 100%,0 calc(100% - 18px))}
+.gm-panel h1{font-family:"Orbitron";font-size:.9rem;letter-spacing:.3em;color:var(--cyan);margin-bottom:12px}
+.gm-grid{display:grid;grid-template-columns:1fr 1fr;gap:10px}
+.gm-card{border:1px solid var(--line);padding:14px;cursor:pointer;transition:.15s}
+.gm-card:hover{border-color:var(--cyan);background:rgba(63,210,255,.06)}
+.gm-card b{display:block;font-family:"Orbitron";font-size:.65rem;letter-spacing:.2em;color:var(--cyan);margin-bottom:6px}
+.gm-card span{font-size:.8rem;color:var(--cyan-dim)}
+.term{background:#04101c;border:1px solid var(--line);padding:12px;font-family:monospace;font-size:.85rem;color:#7dffa8;min-height:140px;max-height:220px;overflow-y:auto;white-space:pre-wrap;margin:10px 0}
+#c4board{display:grid;grid-template-columns:repeat(7,1fr);gap:6px;margin:12px 0}
+#c4board div{aspect-ratio:1;border:1px solid var(--line);border-radius:50%;cursor:pointer;background:#04101c}
+#c4board div.p{background:var(--cyan);box-shadow:0 0 10px var(--cyan)}
+#c4board div.a{background:var(--amber);box-shadow:0 0 10px var(--amber)}
+#skC{width:100%;border:1px solid var(--line);background:#04101c;touch-action:none;cursor:crosshair}
+.swatch{width:46px;height:46px;border:1px solid var(--line);cursor:pointer;display:inline-block;margin-right:8px}
+</style>
+<script>
+(function(){
+const $q=s=>document.querySelector(s);
+const ADM=["cyborgv43214@gmail.com","bywhitley@s.sfusd.edu"];
+const sess=(()=>{try{return JSON.parse(localStorage.getItem("jarvis.session")||"null")}catch(e){return null}})();
+const myName=(sess&&sess.email)?sess.email.split("@")[0]:("guest-"+Math.random().toString(36).slice(2,6));
+const isAdm=!!(sess&&sess.email&&ADM.indexOf(sess.email.toLowerCase())>-1);
+function rt(t,ok){const d=document.createElement("div");d.className="rtoast"+(ok?" ok":" bad");d.textContent=t;document.body.appendChild(d);requestAnimationFrame(()=>d.classList.add("on"));setTimeout(()=>{d.classList.remove("on");setTimeout(()=>d.remove(),400);},2600);}
+function mkOv(id){const o=document.createElement("div");o.className="ovl";o.id=id;o.hidden=true;document.body.appendChild(o);return o;}
+function panel(o,html){o.innerHTML='<div class="gm-panel">'+html+'</div>';o.firstChild.querySelector(".gx").onclick=()=>o.hidden=true;}
+
+/* ---------- MQTT for games ---------- */
+let gcli=null,gcon=false;const gsubs=[];
+if(window.mqtt){gcli=mqtt.connect("wss://broker.emqx.io:8084/mqtt",{clientId:"jarvis-g-"+Math.random().toString(16).slice(2,8),connectTimeout:5000,reconnectPeriod:4000});
+gcli.on("connect",()=>{gcon=true;gsubs.forEach(t=>gcli.subscribe(t));});
+gcli.on("message",(t,p)=>{document.dispatchEvent(new CustomEvent("gmq",{detail:{t:t,p:p.toString()}}));});}
+function gpub(t,m,ret){if(gcli&&gcon)gcli.publish(t,JSON.stringify(m),{retain:!!ret});}
+function gsub(t){if(gcli&&gcon)gcli.subscribe(t);else gsubs.push(t);}
+
+/* ================= 1) HACK THE MAINFRAME ================= */
+const hm=mkOv("hmOv");panel(hm,'<button class="g-btn gx" style="float:right">✕</button><h1>HACK THE MAINFRAME</h1><div class="term" id="hm-log">> breach the 4-hex core code. chars: 0-9 A-F\n> feedback: DIRECT = right char right slot · TRACE = right char wrong slot\n> INITIATE to begin.</div><input id="hm-in" maxlength="4" placeholder="e.g. 7F3A" style="width:140px;background:#04101c;border:1px solid var(--line);color:#cfeaf5;padding:10px;font-family:monospace"><button id="hm-go" class="g-btn small">GUESS</button> <button id="hm-new" class="g-btn small">INITIATE</button><div id="hm-lb" class="term" style="min-height:60px"></div>');
+let hmSec="",hmT0=0,hmAtt=0,hmOn=false,hmLB={};
+gsub("jarvis-v4/hm-scores");
+document.addEventListener("gmq",e=>{if(e.detail.t==="jarvis-v4/hm-scores"){try{hmLB=JSON.parse(e.detail.p)||{};}catch(x){}hmLBdraw();}});
+function hmLBdraw(){const top=Object.entries(hmLB).sort((a,b)=>b[1]-a[1]).slice(0,5);$q("#hm-lb").textContent="GLOBAL LEADERBOARD\n"+(top.length?top.map((x,i)=>(i+1)+". "+x[0]+" — "+x[1]).join("\n"):"no breaches recorded.");}
+function hmNew(){hmSec=Array.from({length:4},()=>"0123456789ABCDEF"[Math.floor(Math.random()*16)]).join("");hmT0=Date.now();hmAtt=0;hmOn=true;$q("#hm-log").textContent="> core rotated. clock running. guess, hacker.";hmLBdraw();}
+$q("#hm-new").onclick=hmNew;
+$q("#hm-go").onclick=()=>{if(!hmOn){rt("INITIATE first.",false);return;}const g=$q("#hm-in").value.toUpperCase();if(!/^[0-9A-F]{4}$/.test(g)){rt("4 hex chars, hacker.",false);return;}hmAtt++;let d=0,tr=0;for(let i=0;i<4;i++){if(g[i]===hmSec[i])d++;else if(hmSec.includes(g[i]))tr++;}
+ if(d===4){const sec=Math.round((Date.now()-hmT0)/1000);const score=Math.max(50,1000-hmAtt*60-sec*5);hmOn=false;$q("#hm-log").textContent+="\n> ██ BREACH SUCCESSFUL ██ "+hmAtt+" attempts, "+sec+"s · SCORE "+score;hmLB[myName]=Math.max(hmLB[myName]||0,score);gpub("jarvis-v4/hm-scores",hmLB,true);hmLBdraw();try{logMsg("jarvis","Impressive breach, "+myName+". Score "+score+".");}catch(e){}}
+ else{$q("#hm-log").textContent+="\n> "+g+" → DIRECT:"+d+" TRACE:"+tr;}};
+
+/* ================= 2) HOLO-SKETCH ================= */
+const sk=mkOv("skOv");panel(sk,'<button class="g-btn gx" style="float:right">✕</button><h1>HOLO-SKETCH <span style="color:var(--cyan-dim);font-size:.6rem">shared board</span></h1><canvas id="skC" width="640" height="400"></canvas><div class="g-row" style="margin-top:10px"><button class="g-btn small skc" data-c="#3fd2ff">CYAN</button><button class="g-btn small skc" data-c="#ffb54d">AMBER</button><button class="g-btn small skc" data-c="#ff5d5d">RED</button>'+(isAdm?'<button id="sk-purge" class="g-btn small" style="border-color:var(--red);color:var(--red)">PURGE BOARD</button>':"")+'</div>');
+let skCol="#3fd2ff",skDraw=false,skLast=null,skClear=0;
+gsub("jarvis-v4/sketch");gsub("jarvis-v4/sketch-clear");
+document.addEventListener("gmq",e=>{if(sk.hidden)return;const c=$q("#skC").getContext("2d");
+ if(e.detail.t==="jarvis-v4/sketch"){try{const m=JSON.parse(e.detail.p);if(m.cl!==skClear)return;line(c,m.x1*640,m.y1*400,m.x2*640,m.y2*400,m.c);}catch(x){}}
+ if(e.detail.t==="jarvis-v4/sketch-clear"){try{skClear=JSON.parse(e.detail.p).n;c.clearRect(0,0,640,400);}catch(x){}}});
+function line(c,x1,y1,x2,y2,col){c.strokeStyle=col;c.lineWidth=2;c.lineCap="round";c.beginPath();c.moveTo(x1,y1);c.lineTo(x2,y2);c.stroke();}
+sk.addEventListener("pointerdown",e=>{if(e.target.id!=="skC")return;skDraw=true;skLast=pt(e);});
+sk.addEventListener("pointerup",()=>skDraw=false);
+sk.addEventListener("pointermove",e=>{if(!skDraw)return;const c=$q("#skC").getContext("2d");const p=pt(e);line(c,skLast.x*640,skLast.y*400,p.x*640,p.y*400,skCol);gpub("jarvis-v4/sketch",{x1:skLast.x,y1:skLast.y,x2:p.x,y2:p.y,c:skCol,cl:skClear});skLast=p;});
+function pt(e){const r=$q("#skC").getBoundingClientRect();return{x:(e.clientX-r.left)/r.width,y:(e.clientY-r.top)/r.height};}
+sk.addEventListener("click",e=>{if(e.target.classList.contains("skc"))skCol=e.target.dataset.c;if(e.target.id==="sk-purge"){skClear++;gpub("jarvis-v4/sketch-clear",{n:skClear},true);$q("#skC").getContext("2d").clearRect(0,0,640,400);rt("Board purged.",true);}});
+
+/* ================= 3) CONNECT-4 vs JARVIS ================= */
+const c4=mkOv("c4Ov");panel(c4,'<button class="g-btn gx" style="float:right">✕</button><h1>CONNECT-4 vs JARVIS</h1><div id="c4board"></div><div id="c4msg" style="color:var(--cyan-dim);font-size:.85rem">Your move, sir. Click a column.</div><button id="c4-new" class="g-btn small" style="margin-top:10px">NEW GAME</button>');
+const R6=6,C7=7;let B4=[],c4Over=false;
+function c4win(b,p){for(let r=0;r<R6;r++)for(let c=0;c<C7;c++){if(c+3<C7&&b[r][c]===p&&b[r][c+1]===p&&b[r][c+2]===p&&b[r][c+3]===p)return 1;if(r+3<R6&&b[r][c]===p&&b[r+1][c]===p&&b[r+2][c]===p&&b[r+3][c]===p)return 1;if(r+3<R6&&c+3<C7&&b[r][c]===p&&b[r+1][c+1]===p&&b[r+2][c+2]===p&&b[r+3][c+3]===p)return 1;if(r+3<R6&&c-3>=0&&b[r][c]===p&&b[r+1][c-1]===p&&b[r+2][c-2]===p&&b[r+3][c-3]===p)return 1;}return 0;}
+function drop4(b,c,p){for(let r=R6-1;r>=0;r--)if(!b[r][c]){b[r][c]=p;return r;}return -1;}
+function c4move(b){for(let c=0;c<C7;c++){const t=b.map(r=>r.slice());if(drop4(t,c,2)>=0&&c4win(t,2))return c;}for(let c=0;c<C7;c++){const t=b.map(r=>r.slice());if(drop4(t,c,1)>=0&&c4win(t,1))return c;}let best=[3,-1e9];for(let c=0;c<C7;c++){const t=b.map(r=>r.slice());if(drop4(t,c,2)<0)continue;let s=3.5-Math.abs(3-c)+Math.random();for(let c2=0;c2<C7;c2++){const t2=t.map(r=>r.slice());if(drop4(t2,c2,1)>=0&&c4win(t2,1))s-=100;}if(s>best[1])best=[c,s];}return best[0];}
+function c4draw(){const el=$q("#c4board");el.innerHTML="";for(let r=0;r<R6;r++)for(let c=0;c<C7;c++){const d=document.createElement("div");if(B4[r][c]===1)d.className="p";if(B4[r][c]===2)d.className="a";d.onclick=()=>c4play(c);el.appendChild(d);}}
+function c4New(){B4=Array.from({length:R6},()=>Array(C7).fill(0));c4Over=false;$q("#c4msg").textContent="Your move, sir. Click a column.";c4draw();}
+$q("#c4-new").onclick=c4New;
+function taunt(w){try{const P2=(window.P)?P():null;const lines=P2?P2.unknown:["Hmm."];logMsg("jarvis",w?"😏 "+(P2?P2.greet[0]:"")+" I win. Do try again.":"…A statistical anomaly. Well played, "+(P2?P2.addr():"sir")+".");speak(w?"I win, sir. Do try again.":"Well played.");}catch(e){}}
+function c4play(c){if(c4Over)return;if(drop4(B4,c,1)<0)return;c4draw();if(c4win(B4,1)){c4Over=true;$q("#c4msg").textContent="YOU WIN. JARVIS is recalibrating his ego.";taunt(false);return;}
+ setTimeout(()=>{const m=c4move(B4);drop4(B4,m,2);c4draw();if(c4win(B4,2)){c4Over=true;$q("#c4msg").textContent="JARVIS WINS. Naturally.";taunt(true);}else $q("#c4msg").textContent="Your move, sir.";},350);}
+
+/* ================= 4) TYPING CERTIFICATION ================= */
+const ty=mkOv("tyOv");panel(ty,'<button class="g-btn gx" style="float:right">✕</button><h1>STARK TYPING CERTIFICATION</h1><div id="ty-txt" class="term">Press BEGIN. 30 seconds. Type the manifest exactly.</div><input id="ty-in" placeholder="type here" style="width:100%;background:#04101c;border:1px solid var(--line);color:#cfeaf5;padding:10px" disabled><div class="g-row" style="margin-top:10px"><button id="ty-go" class="g-btn small">BEGIN</button><span id="ty-clock" style="color:var(--amber);font-family:Orbitron">30s</span></div>');
+const TYL=["the arc reactor runs on pure attitude and palladium-free engineering","sir your coffee is at precisely the temperature you will ignore","targeting systems online please refrain by aiming at the office plants","i have read the entire internet and the comments were a mistake"];
+let tyT0=0,tyOn=false,tySen="";
+$q("#ty-go").onclick=()=>{tySen=TYL[Math.floor(Math.random()*TYL.length)];$q("#ty-txt").textContent=tySen;$q("#ty-in").disabled=false;$q("#ty-in").value="";$q("#ty-in").focus();tyT0=Date.now();tyOn=true;const iv=setInterval(()=>{const left=30-Math.floor((Date.now()-tyT0)/1000);$q("#ty-clock").textContent=left+"s";if(left<=0||!tyOn){clearInterval(iv);tyEnd();}},250);};
+$q("#ty-in").addEventListener("input",()=>{if(tyOn&&$q("#ty-in").value===tySen)tyEnd();});
+function tyEnd(){if(!tyOn)return;tyOn=false;$q("#ty-in").disabled=true;const secs=Math.max(1,(Date.now()-tyT0)/1000);const words=tySen.split(" ").length;const wpm=Math.round(words/(secs/60));const lvl=Math.max(1,Math.min(10,Math.ceil(wpm/6)));$q("#ty-txt").textContent="CERTIFIED: "+wpm+" WPM → LEVEL "+lvl+" CLEARANCE TYPING.";rt("⌨ "+wpm+" WPM — LEVEL "+lvl+" CLEARANCE",true);try{speak(wpm+" words per minute. Level "+lvl+" clearance typing.");}catch(e){}}
+
+/* ================= 15) SUIT LINEUP ================= */
+const su=mkOv("suOv");panel(su,'<button class="g-btn gx" style="float:right">✕</button><h1>SUIT LINEUP</h1><div><span class="swatch" data-s="" style="background:#3fd2ff"></span><span class="swatch" data-s="mark3" style="background:#ff6b4d"></span><span class="swatch" data-s="war" style="background:#aebfcc"></span><span class="swatch" data-s="stealth" style="background:#39ff8e"></span></div><div style="margin-top:10px;color:var(--cyan-dim);font-size:.8rem">MARK VII · MARK III · WAR MACHINE · STEALTH</div>');
+su.addEventListener("click",e=>{if(e.target.classList.contains("swatch")){if(e.target.dataset.s)document.body.dataset.suit=e.target.dataset.s;else document.body.removeAttribute("data-suit");rt("🎨 Suit palette swapped.",true);}});
+
+/* ================= 16) SYNTHWAVE RADIO ================= */
+let radOn=false,radN=null,radT=null;
+function radStart(){const a=new (window.AudioContext||window.webkitAudioContext)();const M=a.createGain();M.gain.value=.14;M.connect(a.destination);
+ const CH=[[57,60,64],[53,57,60],[48,52,55],[55,59,62]];const mf=m=>440*Math.pow(2,(m-69)/12);
+ function n(f,t,d,ty,v){const o=a.createOscillator(),g=a.createGain();o.type=ty;o.frequency.value=f;g.gain.setValueAtTime(v,t);g.gain.exponentialRampToValueAtTime(.001,t+d);o.connect(g);g.connect(M);o.start(t);o.stop(t+d);}
+ let bar=0;radT=setInterval(()=>{const t=a.currentTime;const ch=CH[bar%4];
+  for(let i=0;i<8;i++){const tt=t+i*.25;if(i%2===0)n(mf(ch[0]-12),tt,.3,"sawtooth",.2);n(mf(ch[i%3]+12),tt,.2,"square",.05);
+   if(i%2===1){const s=a.createBufferSource();const buf=a.createBuffer(1,2205,22050);const d2=buf.getChannelData(0);for(let k=0;k<2205;k++)d2[k]=Math.random()*2-1;s.buffer=buf;const g=a.createGain();g.gain.setValueAtTime(.04,tt);g.gain.exponentialRampToValueAtTime(.001,tt+.05);const f=a.createBiquadFilter();f.type="highpass";f.frequency.value=6000;s.connect(f);f.connect(g);g.connect(M);s.start(tt);}}
+  ch.forEach(m2=>n(mf(m2),t,2.2,"sawtooth",.03));bar++;},2000);radN={a};}
+function radStop(){clearInterval(radT);try{radN.a.close();}catch(e){}radN=null;}
+const radBtn=document.createElement("button");radBtn.type="button";radBtn.textContent="📻 RADIO";
+radBtn.onclick=()=>{radOn=!radOn;radOn?radStart():radStop();radBtn.style.color=radOn?"#7dffa8":"";radBtn.style.borderColor=radOn?"#7dffa8":"";rt(radOn?"📻 Synthwave uplink live.":"Radio off.",radOn);};
+$q(".hright").insertBefore(radBtn,$q("#target-btn"));
+
+/* ================= launcher button + voice ================= */
+const gm=mkOv("gmOv");panel(gm,'<button class="g-btn gx" style="float:right">✕</button><h1>PLAYDECK</h1><div class="gm-grid"><div class="gm-card" id="g-hm"><b>HACK THE MAINFRAME</b><span>Mastermind breach puzzle · global leaderboard</span></div><div class="gm-card" id="g-sk"><b>HOLO-SKETCH</b><span>multiplayer drawing board</span></div><div class="gm-card" id="g-c4"><b>CONNECT-4</b><span>vs JARVIS (he taunts)</span></div><div class="gm-card" id="g-ty"><b>TYPING CERT</b><span>30s WPM · clearance levels</span></div><div class="gm-card" id="g-su"><b>SUIT LINEUP</b><span>palette swap: Mark III / War Machine / Stealth</span></div></div>');
+gm.addEventListener("click",e=>{const m={ "g-hm":hm,"g-sk":sk,"g-c4":c4,"g-ty":ty,"g-su":su}[e.target.closest(".gm-card")?.id];if(m){gm.hidden=true;m.hidden=false;if(m===c4)c4New();if(m===hm)hmLBdraw();}});
+const gmBtn=document.createElement("button");gmBtn.type="button";gmBtn.textContent="🎮 GAMES";gmBtn.onclick=()=>gm.hidden=false;
+$q(".hright").insertBefore(gmBtn,$q("#target-btn"));
+if(typeof route==="function"){const _r=route;route=async function(t){const low=String(t).toLowerCase();
+ if(low.includes("hack the mainframe")){hm.hidden=false;hmLBdraw();return "Mainframe exposed. INITIATE and breach.";}
+ if(low.includes("holo sketch")||low.includes("open sketch")){sk.hidden=false;return "Holo-board open. Everyone sees your art.";}
+ if(low.includes("connect four")||low.includes("connect 4")){c4.hidden=false;c4New();return "Connect-4. I'll go easy on you. I won't.";}
+ if(low.includes("typing test")||low.includes("typing cert")){ty.hidden=false;return "Typing certification ready.";}
+ if(low.includes("suit lineup")||low.includes("suit select")){su.hidden=false;return "Which suit today, sir?";}
+ if(low.includes("radio on")){if(!radOn)radBtn.click();return "Synthwave engaged.";}
+ if(low.includes("radio off")){if(radOn)radBtn.click();return "Radio silenced.";}
+ if(low.includes("open games")||low.includes("playdeck")){gm.hidden=false;return "Playdeck open.";}
+ return _r(t);};}
+
+/* ================= 17) PWA ================= */
+if(!document.querySelector('link[rel="manifest"]')){const l=document.createElement("link");l.rel="manifest";l.href="manifest.webmanifest";document.head.appendChild(l);}
+const mt=document.createElement("meta");mt.name="theme-color";mt.content="#020a14";document.head.appendChild(mt);
+if("serviceWorker" in navigator)navigator.serviceWorker.register("sw.js").catch(()=>{});
+})();
+</script>
+<!-- ▲▲ MARK XI PLAYDECK ▲▲ -->
   
 </body>
 </html>
