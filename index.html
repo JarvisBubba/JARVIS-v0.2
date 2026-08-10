@@ -711,6 +711,169 @@ if("serviceWorker" in navigator)navigator.serviceWorker.register("sw.js").catch(
 })();
 </script>
 <!-- ▲▲ MARK XI PLAYDECK ▲▲ -->
+
+<!-- ▼▼ MARK XII WORLDDECK — paste right above </body> ▼▼ -->
+<style>
+#wx{position:fixed;inset:0;z-index:1;pointer-events:none}
+.hof-row{font-size:.75rem;color:var(--cyan-dim);padding:3px 0;border-bottom:1px dashed rgba(15,58,92,.6)}
+.hof-row b{color:var(--amber)}
+.poll-opt{display:block;width:100%;text-align:left;margin:6px 0;position:relative;border:1px solid var(--line);background:#04101c;color:var(--text);padding:8px 10px;cursor:pointer;font-family:"Rajdhani"}
+.poll-bar{position:absolute;left:0;top:0;bottom:0;background:rgba(63,210,255,.18)}
+.poll-opt span{position:relative}
+.codewrap pre{background:#04101c;border:1px solid var(--line);padding:10px;overflow-x:auto;font-family:monospace;font-size:.8rem;line-height:1.45;margin:6px 0}
+.tok-k{color:#ff9d5c}.tok-s{color:#7dffa8}.tok-c{color:#1a7f99}
+#radarImg{width:100%;image-rendering:pixelated;border:1px solid var(--line);opacity:.85}
+</style>
+<script>
+(function(){
+const $q=s=>document.querySelector(s);
+const ADM=["cyborgv43214@gmail.com","bywhitley@s.sfusd.edu"];
+const sess=(()=>{try{return JSON.parse(localStorage.getItem("jarvis.session")||"null")}catch(e){return null}})();
+const myName=(sess&&sess.email)?sess.email.split("@")[0]:("guest-"+Math.random().toString(36).slice(2,6));
+const isAdm=!!(sess&&sess.email&&ADM.indexOf(sess.email.toLowerCase())>-1);
+function rt(t,ok){const d=document.createElement("div");d.className="rtoast"+(ok?" ok":" bad");d.textContent=t;document.body.appendChild(d);requestAnimationFrame(()=>d.classList.add("on"));setTimeout(()=>{d.classList.remove("on");setTimeout(()=>d.remove(),400);},2600);}
+let wc=null,wcon=false;const wsubs=[];
+if(window.mqtt){wc=mqtt.connect("wss://broker.hivemq.com:8884/mqtt",{clientId:"jarvis-w-"+Math.random().toString(16).slice(2,8),connectTimeout:5000,reconnectPeriod:4000});
+wc.on("connect",()=>{wcon=true;wsubs.forEach(t=>wc.subscribe(t));});
+wc.on("message",(t,p)=>{document.dispatchEvent(new CustomEvent("wmq",{detail:{t:t,p:p.toString()}}));});}
+function wsub(t){if(wc&&wcon)wc.subscribe(t);else wsubs.push(t);}
+function wpub(t,m,ret){if(wc&&wcon)wc.publish(t,JSON.stringify(m),{retain:!!ret});}
+
+/* ===== 5) weather particles ===== */
+const wxC=document.createElement("canvas");wxC.id="wx";document.body.appendChild(wxC);
+const wx2=wxC.getContext("2d");let WM="calm";const WP=[];
+function wxR(){wxC.width=innerWidth;wxC.height=innerHeight;}addEventListener("resize",wxR);wxR();
+for(let i=0;i<140;i++)WP.push({x:Math.random()*innerWidth,y:Math.random()*innerHeight,v:2+Math.random()*4,d:Math.random()*2-1});
+(function wxTick(){wx2.clearRect(0,0,wxC.width,wxC.height);
+ if(WM==="rain"){wx2.strokeStyle="rgba(63,210,255,.3)";wx2.beginPath();for(const p of WP){p.y+=p.v*2.2;p.x+=p.d;if(p.y>wxC.height){p.y=-10;p.x=Math.random()*wxC.width;}wx2.moveTo(p.x,p.y);wx2.lineTo(p.x-2,p.y+12);}wx2.stroke();}
+ else if(WM==="snow"){wx2.fillStyle="rgba(220,245,255,.6)";for(const p of WP){p.y+=p.v*.5;p.x+=Math.sin(p.y/30)*.6;if(p.y>wxC.height){p.y=-6;p.x=Math.random()*wxC.width;}wx2.fillRect(p.x,p.y,2.2,2.2);}}
+ else if(WM==="fog"){wx2.fillStyle="rgba(160,200,220,.05)";for(let i=0;i<6;i++){const t=Date.now()/4000+i*2;wx2.beginPath();wx2.ellipse((t*80+i*300)%(wxC.width+400)-200,100+i*90,220,40,0,0,7);wx2.fill();}}
+ else{wx2.fillStyle="rgba(63,210,255,.15)";for(let i=0;i<40;i++){const p=WP[i];p.y-=.15;if(p.y<0)p.y=wxC.height;wx2.fillRect(p.x,p.y,1.5,1.5);}}
+ requestAnimationFrame(wxTick);})();
+
+/* ===== 6) moon + sun ===== */
+function sunMoon(lat,lon){const el=$q("#bigclock")?$q("#bigclock").closest(".module"):null;if(!el)return;
+ const now=new Date(),syn=29.53058867,epoch=Date.UTC(2000,0,6,18,14);
+ const age=((now-epoch)/86400000)%syn;const idx=Math.floor((age/syn)*8+0.5)%8;
+ const MO=["🌑","","🌓","🌔","","🌖","","🌘"],MN=["New","Waxing crescent","First quarter","Waxing gibbous","Full","Waning gibbous","Last quarter","Waning crescent"];
+ let sunTxt="—";
+ if(lat!=null&&lon!=null){const rad=Math.PI/180;const start=Date.UTC(now.getUTCFullYear(),0,0);const doy=(now-start)/86400000;
+  const decl=23.45*rad*Math.sin(2*Math.PI*(284+doy)/365);const latR=lat*rad;
+  const cosH=(Math.sin(-0.833*rad)-Math.sin(latR)*Math.sin(decl))/(Math.cos(latR)*Math.cos(decl));
+  if(cosH<=1&&cosH>=-1){const H=Math.acos(cosH)/rad;
+   const eqt=229.18*(0.000075+0.001868*Math.cos(2*Math.PI*doy/365)-0.032077*Math.sin(2*Math.PI*doy/365)-0.014615*Math.cos(4*Math.PI*doy/365)-0.040849*Math.sin(4*Math.PI*doy/365));
+   const noon=720-4*lon-eqt;const fmt=m=>{m=((m%1440)+1440)%1440;return String(Math.floor(m/60)).padStart(2,"0")+":"+String(Math.floor(m%60)).padStart(2,"0");};
+   sunTxt=fmt(noon-4*H)+" → "+fmt(noon+4*H)+" UTC";}}
+ el.insertAdjacentHTML("beforeend",'<div class="rows"><div><span>MOON</span><b>'+MO[idx]+" "+MN[idx]+'</b></div><div><span>DAWN→DUSK</span><b>'+sunTxt+"</b></div></div>");}
+(async()=>{try{const g=await(await fetch("https://ipwho.is/")).json();window.__lat=g.latitude;window.__lon=g.longitude;
+ const f=await(await fetch("https://api.open-meteo.com/v1/forecast?latitude="+g.latitude+"&longitude="+g.longitude+"&current=weather_code")).json();
+ const c=f.current.weather_code;WM=(c>=71&&c<=77)?"snow":(c>=45&&c<=48)?"fog":((c>=51&&c<=67)||(c>=80&&c<=82)||(c>=95))?"rain":"calm";
+ sunMoon(g.latitude,g.longitude);}catch(e){sunMoon();}})();
+
+/* ===== 7) precip radar strip ===== */
+const asideR=document.querySelectorAll(".hud aside")[1]||document.querySelector(".hud aside");
+if(asideR)asideR.insertAdjacentHTML("afterbegin",'<div class="module"><h3>PRECIP RADAR <span>▮</span></h3><img id="radarImg" alt=""><div class="rows"><div><span>FRAME</span><b id="radN">--</b></div></div></div><div class="module"><h3>POLL OF THE DAY <span>▮</span></h3><div id="pollBox"></div></div>');
+(async()=>{try{const d=await(await fetch("https://api.rainviewer.com/public/weather-maps.json")).json();
+ const frames=(d.radar.past||[]).slice(-6);if(!frames.length)return;let fi=0;
+ const lat=window.__lat||40,lon=window.__lon||-74,z=4,latR=lat*Math.PI/180;
+ const x=Math.floor((lon+180)/360*Math.pow(2,z));const y=Math.floor((1-Math.log(Math.tan(latR)+1/Math.cos(latR))/Math.PI)/2*Math.pow(2,z));
+ setInterval(()=>{const f=frames[fi%frames.length];const im=$q("#radarImg");if(im)im.src=d.host+f.path+"/256/"+z+"/"+x+"/"+y+"/4/1_1.png";const rn=$q("#radN");if(rn)rn.textContent=(fi%frames.length+1)+"/"+frames.length;fi++;},700);}catch(e){}})();
+
+/* ===== 8) github live feed + 14) hall of fame modules ===== */
+const asideL=document.querySelectorAll(".hud aside")[0]||document.querySelector(".hud aside");
+if(asideL)asideL.insertAdjacentHTML("beforeend",'<div class="module"><h3>REPO FEED <span>▮</span></h3><div class="feed" id="ghf"><div>Linking…</div></div></div><div class="module"><h3>HALL OF FAME <span>▮</span></h3><div id="hofBox"></div></div>');
+let lastSha=null;
+async function gh(){try{const parts=location.pathname.split("/").filter(Boolean);const owner=parts[0]||"";const repos=[owner+"/"+(parts[1]||""),owner+"/jarvis-v0.2",owner+"/jarvis-v0.1"];
+ for(const repo of repos){if(!owner||repo.endsWith("/"))continue;const r=await fetch("https://api.github.com/repos/"+repo+"/commits?per_page=4");if(!r.ok)continue;const cs=await r.json();if(!Array.isArray(cs)||!cs[0])continue;
+  if(lastSha&&cs[0].sha!==lastSha)rt("📦 New commit: "+cs[0].commit.message.split("\n")[0].slice(0,40),true);
+  lastSha=cs[0].sha;
+  $q("#ghf").innerHTML=cs.map(c=>{const mins=Math.max(1,Math.round((Date.now()-new Date(c.commit.author.date))/60000));return "<div><b>"+c.sha.slice(0,7)+"</b> "+c.commit.message.split("\n")[0].slice(0,32).replace(/</g,"&lt;")+" — "+(mins<60?mins+"m":Math.round(mins/60)+"h")+"</div>";}).join("");return;}}catch(e){}}
+gh();setInterval(gh,60000);
+
+/* ===== 9) learn protocols ===== */
+let LEARN={};try{LEARN=JSON.parse(localStorage.getItem("jarvis.learn")||"{}");}catch(e){}
+wsub("jarvis-v4/learn");
+document.addEventListener("wmq",e=>{if(e.detail.t==="jarvis-v4/learn"){try{LEARN=JSON.parse(e.detail.p)||{};}catch(x){}}});
+function saveLearn(){localStorage.setItem("jarvis.learn",JSON.stringify(LEARN));wpub("jarvis-v4/learn",LEARN,true);}
+
+/* ===== 11) code writer ===== */
+function hl(code){return code.replace(/&/g,"&amp;").replace(/</g,"&lt;").replace(/("[^"]*"|'[^']*')/g,'<span class="tok-s">$1</span>').replace(/\b(def|return|import|from|for|while|if|elif|else|class|function|const|let|var|async|await|print|in|not|and|or)\b/g,'<span class="tok-k">$1</span>').replace(/(#.*|\/\/.*)/g,'<span class="tok-c">$1</span>');}
+function codeMsg(txt){const L=$q("#log");if(!L)return;const m=txt.match(/```(\w*)\n([\s\S]*?)```/);const code=m?m[2]:txt;const intro=m?txt.slice(0,txt.indexOf("```")).trim():"";
+ const d=document.createElement("div");d.className="msg jarvis codewrap";
+ d.innerHTML='<span class="who">'+((window.S&&S.name)||"JARVIS")+"</span>"+(intro?("<div>"+intro.replace(/</g,"&lt;")+"</div>"):"")+"<pre>"+hl(code)+"</pre>";
+ const b=document.createElement("button");b.className="g-btn small";b.textContent="COPY";
+ b.onclick=()=>{navigator.clipboard.writeText(code).then(()=>rt("Copied, sir.",true));};
+ d.appendChild(b);L.appendChild(d);L.scrollTop=L.scrollHeight;}
+
+/* ===== 10) conversational mode ===== */
+let convo=localStorage.getItem("jarvis.convo")==="1";
+const cvBtn=document.createElement("button");cvBtn.type="button";cvBtn.textContent="🗣 CONVO";
+function cvPaint(){cvBtn.style.color=convo?"#7dffa8":"";cvBtn.style.borderColor=convo?"#7dffa8":"";}
+cvBtn.onclick=()=>{convo=!convo;localStorage.setItem("jarvis.convo",convo?"1":"0");cvPaint();rt(convo?"🗣 Conversational mode ON — speak freely.":"Convo off.",convo);};
+cvPaint();$q(".hright").insertBefore(cvBtn,$q("#target-btn"));
+if(typeof window.speak==="function"){const _sp=window.speak;window.speak=function(t){
+ if(convo){const chk=setInterval(()=>{const o=$q("#orb");if(o&&!o.classList.contains("speaking")){clearInterval(chk);setTimeout(()=>{if(!convo)return;try{if(window.rec){rec.start();$q("#orb").classList.add("listening");}}catch(e){}},350);}},600);setTimeout(()=>clearInterval(chk),25000);}
+ return _sp(t);};}
+
+/* ===== 12) global reactor ===== */
+let COREp={p:50};wsub("jarvis-v4/core");
+document.addEventListener("wmq",e=>{if(e.detail.t==="jarvis-v4/core"){try{COREp=JSON.parse(e.detail.p)||COREp;}catch(x){}coreDraw();}});
+function coreDraw(){const el=$q("#gcore");if(el)el.textContent=COREp.p.toFixed(1)+"%";}
+const gmod=$q("#gaugeArc")?$q("#gaugeArc").closest(".module"):null;
+if(gmod)gmod.insertAdjacentHTML("beforeend",'<div class="rows"><div><span>GLOBAL CORE</span><b id="gcore">--</b></div></div>');
+$q(".orb").addEventListener("click",()=>{COREp.p=Math.min(100,COREp.p+0.5);wpub("jarvis-v4/core",COREp,true);coreDraw();if(COREp.p>=100)rt("🌍 PLANETARY CORE FULLY CHARGED. Extraordinary.",true);});
+coreDraw();
+
+/* ===== 13) poll of the day ===== */
+let POLL=null;wsub("jarvis-v4/poll");
+document.addEventListener("wmq",e=>{if(e.detail.t==="jarvis-v4/poll"){try{POLL=JSON.parse(e.detail.p);}catch(x){}pollDraw();}});
+function pollDraw(){const box=$q("#pollBox");if(!box)return;
+ if(!POLL||!POLL.q){box.innerHTML='<div class="a-empty">No poll today.</div>';return;}
+ const total=Object.values(POLL.votes||{}).reduce((a,b)=>a+b,0)||1;const voted=localStorage.getItem("jarvis.voted."+POLL.id);
+ box.innerHTML='<div style="color:var(--cyan);margin-bottom:6px">'+String(POLL.q).replace(/</g,"&lt;")+"</div>"+POLL.opts.map(o=>{const v=(POLL.votes||{})[o]||0;const pc=Math.round(v/total*100);return '<button class="poll-opt" data-o="'+String(o).replace(/"/g,"")+'"><span class="poll-bar" style="width:'+pc+'%"></span><span>'+String(o).replace(/</g,"&lt;")+" — "+pc+"%</span></button>";}).join("")+(voted?'<div class="a-empty">vote recorded</div>':"");}
+document.addEventListener("click",e=>{const b=e.target.closest(".poll-opt");if(!b||!POLL)return;const id="jarvis.voted."+POLL.id;if(localStorage.getItem(id))return;const o=b.dataset.o;POLL.votes=POLL.votes||{};POLL.votes[o]=(POLL.votes[o]||0)+1;localStorage.setItem(id,"1");wpub("jarvis-v4/poll",POLL,true);pollDraw();});
+pollDraw();
+
+/* ===== 14) hall of fame ===== */
+let HOF=[];wsub("jarvis-v4/hof");
+document.addEventListener("wmq",e=>{if(e.detail.t==="jarvis-v4/hof"){try{HOF=JSON.parse(e.detail.p)||[];}catch(x){}hofDraw();}});
+function hofDraw(){const box=$q("#hofBox");if(!box)return;
+ box.innerHTML=HOF.length?HOF.slice(-6).reverse().map((h,i)=>'<div class="hof-row"><b>'+String(h.n).replace(/</g,"&lt;")+"</b>: "+String(h.m).replace(/</g,"&lt;")+(isAdm?' <button class="g-btn small hof-x" data-i="'+(HOF.length-1-HOF.slice(-6).reverse().indexOf(h))+'" style="padding:2px 6px">✕</button>':"")+"</div>").join(""):'<div class="a-empty">No legends yet. Sign one.</div>';}
+document.addEventListener("click",e=>{const x=e.target.closest(".hof-x");if(x&&isAdm){HOF.splice(+x.dataset.i,1);wpub("jarvis-v4/hof",HOF,true);hofDraw();}});
+hofDraw();
+const hofOv=document.createElement("div");hofOv.className="ovl";hofOv.id="hofOv";hofOv.hidden=true;
+hofOv.innerHTML='<div class="gm-panel" style="width:420px"><h1>SIGN THE HALL OF FAME</h1><input id="hf-n" maxlength="24" placeholder="NAME" style="width:100%;background:#04101c;border:1px solid var(--line);color:#cfeaf5;padding:10px;margin-bottom:8px"><input id="hf-m" maxlength="80" placeholder="MESSAGE" style="width:100%;background:#04101c;border:1px solid var(--line);color:#cfeaf5;padding:10px;margin-bottom:10px"><div class="g-row"><button id="hf-go" class="g-btn small">SIGN</button><button id="hf-x" class="g-btn small ghost">CLOSE</button></div></div>';
+document.body.appendChild(hofOv);
+$q("#hf-x").onclick=()=>hofOv.hidden=true;
+$q("#hf-go").onclick=()=>{const n=$q("#hf-n").value.trim()||myName,m=$q("#hf-m").value.trim();if(!m){rt("Write something legendary.",false);return;}HOF.push({n:n,m:m,t:Date.now()});wpub("jarvis-v4/hof",HOF,true);hofDraw();hofOv.hidden=true;rt("🏛 Signed. Legendary.",true);};
+const hofBtn=document.createElement("button");hofBtn.type="button";hofBtn.textContent="🏛 HOF";hofBtn.onclick=()=>hofOv.hidden=false;
+$q(".hright").insertBefore(hofBtn,$q("#target-btn"));
+
+/* ===== admin: poll composer ===== */
+if(isAdm){const ao=$q("#adminOv .g-panel");if(ao){const card=document.createElement("div");card.className="a-card";
+ card.innerHTML='<h2>POLL OF THE DAY</h2><input id="pl-q" placeholder="Question?" style="width:100%;background:#04101c;border:1px solid var(--line);color:#cfeaf5;padding:10px;margin-bottom:8px"><input id="pl-o" placeholder="option A, option B, option C" style="width:100%;background:#04101c;border:1px solid var(--line);color:#cfeaf5;padding:10px;margin-bottom:8px"><button id="pl-go" class="g-btn small">LAUNCH POLL</button>';
+ ao.insertBefore(card,ao.querySelector(".g-row"));
+ setTimeout(()=>{const b=$q("#pl-go");if(b)b.onclick=()=>{const q=$q("#pl-q").value.trim(),opts=$q("#pl-o").value.split(",").map(s=>s.trim()).filter(Boolean);if(!q||opts.length<2){rt("Need a question + 2 options.",false);return;}POLL={id:Date.now(),q:q,opts:opts,votes:{}};wpub("jarvis-v4/poll",POLL,true);pollDraw();rt("📊 Poll launched site-wide.",true);};},400);}}
+
+/* ===== voice + text routing ===== */
+if(typeof route==="function"){const _r=route;route=async function(t){const low=String(t).toLowerCase();
+ for(const k in LEARN){if(low.includes(k))return LEARN[k];}
+ const lm=String(t).match(/^learn:\s*(.+?)\s*(?:→|->)\s*(.+)/i);
+ if(lm){LEARN[lm[1].toLowerCase().trim()]=lm[2].trim();saveLearn();return "Protocol learned: “"+lm[1].trim()+"”. I shall obey, sir.";}
+ if(low.startsWith("forget:")){const k=low.slice(7).trim();if(LEARN[k]){delete LEARN[k];saveLearn();return "Protocol forgotten.";}return "No such protocol on file.";}
+ if((low.startsWith("write ")||low.startsWith("code ")||low.includes("write me"))&&(window.S&&S.geminiKey)){
+  (async()=>{rt("✍ Drafting code…",true);try{
+   const r=await fetch("https://generativelanguage.googleapis.com/v1beta/models/gemini-2.0-flash:generateContent?key="+S.geminiKey,{method:"POST",headers:{"Content-Type":"application/json"},body:JSON.stringify({contents:[{parts:[{text:"You are JARVIS. Request: "+t+". Reply with a one-line intro then ONE fenced code block, under 120 lines."}]}]})});
+   const d=await r.json();const txt=d.candidates&&d.candidates[0]&&d.candidates[0].content.parts[0].text;codeMsg(txt||"// uplink returned nothing, sir.");
+  }catch(e){rt("Code uplink failed.",false);}})();
+  return "On it, sir — drafting now.";}
+ if(low.includes("conversational mode on")||low.includes("convo on")){if(!convo)cvBtn.click();return "Conversational mode on. Speak, and I shall listen.";}
+ if(low.includes("conversational mode off")||low.includes("convo off")){if(convo)cvBtn.click();return "Conversational mode off.";}
+ if(low.includes("sign the hall")||low.includes("hall of fame")){hofOv.hidden=false;return "The ledger is open, sir.";}
+ return _r(t);};}
+})();
+</script>
+<!-- ▲▲ MARK XII WORLDDECK ▲▲ -->
   
 </body>
 </html>
