@@ -6,61 +6,63 @@
 <title>J.A.R.V.I.S. — Comms Channel</title>
 <script src="https://unpkg.com/mqtt/dist/mqtt.min.js"></script>
 <style>
-:root{
-  --bg:#070d17; --panel:#0c1727; --line:rgba(64,196,255,.22);
-  --cyan:#3fd2ff; --dim:#6fa8bf; --amber:#ffab4a; --green:#7dffa8; --text:#dcf5ff;
-}
-*{box-sizing:border-box}
-html,body{height:100%}
-body{
-  margin:0; font-family:"Segoe UI",Arial,Helvetica,sans-serif; color:var(--text);
-  background:
-    linear-gradient(rgba(64,196,255,.045) 1px,transparent 1px),
-    linear-gradient(90deg,rgba(64,196,255,.045) 1px,transparent 1px),
-    var(--bg);
-  background-size:42px 42px;
-  display:flex; flex-direction:column;
-}
-header{display:flex;align-items:center;justify-content:space-between;gap:10px;padding:10px 18px;border-bottom:1px solid var(--line)}
-.logo{color:var(--cyan);font-weight:700;letter-spacing:5px;font-size:15px;text-shadow:0 0 12px rgba(63,210,255,.5)}
-#uplink{font-size:11px;letter-spacing:2px;color:var(--dim)}
-#uplink b{color:var(--amber)}
-#uplink[data-state="ONLINE"] b{color:var(--green)}
-.hud-btn{display:inline-block;padding:6px 14px;border:1px solid var(--cyan);background:rgba(63,210,255,.08);
-  color:var(--cyan);font-size:11px;letter-spacing:2px;text-transform:uppercase;text-decoration:none;cursor:pointer;transition:.15s}
-.hud-btn:hover{background:rgba(63,210,255,.22);color:#eaffff;box-shadow:0 0 14px rgba(63,210,255,.45)}
-main{flex:1;display:flex;justify-content:center;padding:26px 16px;min-height:0}
-.panel{
-  width:100%;max-width:860px;display:flex;flex-direction:column;min-height:0;
-  background:var(--panel);border:1px solid var(--line);padding:16px 18px;
-  clip-path:polygon(0 0,calc(100% - 18px) 0,100% 18px,100% 100%,18px 100%,0 calc(100% - 18px));
-}
-.panel h2{margin:0 0 10px;font-size:12px;letter-spacing:3px;color:var(--dim);font-weight:600}
+:root{--bg:#020a14;--panel:rgba(4,22,38,.92);--line:#0f3a5c;--cyan:#3fd2ff;--dim:#1a7f99;--amber:#ffb54d;--green:#7dffa8;--text:#cfeaf5;}
+*{box-sizing:border-box}html,body{height:100%}
+body{margin:0;font-family:"Rajdhani",sans-serif;color:var(--text);background:radial-gradient(1200px 600px at 50% -10%,rgba(63,210,255,.09),transparent 60%),var(--bg);display:flex;flex-direction:column;}
+body::before{content:"";position:fixed;inset:0;pointer-events:none;z-index:0;background:linear-gradient(rgba(63,210,255,.05) 1px,transparent 1px),linear-gradient(90deg,rgba(63,210,255,.05) 1px,transparent 1px);background-size:44px 44px;}
+header{position:relative;z-index:1;display:flex;align-items:center;justify-content:space-between;gap:10px;padding:12px 24px;border-bottom:1px solid var(--line);background:linear-gradient(180deg,rgba(3,16,28,.9),rgba(3,16,28,.4));}
+.logo{font-family:"Orbitron";color:var(--cyan);font-weight:700;letter-spacing:5px;font-size:15px;text-shadow:0 0 12px rgba(63,210,255,.5)}
+#uplink{font-family:"Orbitron";font-size:11px;letter-spacing:2px;color:var(--dim)}#uplink b{color:var(--amber)}#uplink[data-state="ONLINE"] b{color:var(--green)}
+.hud-btn{font-family:"Orbitron";display:inline-block;padding:8px 16px;border:1px solid var(--cyan);background:rgba(63,210,255,.08);color:var(--cyan);font-size:11px;letter-spacing:2px;text-transform:uppercase;text-decoration:none;cursor:pointer;transition:.15s}
+.hud-btn:hover{background:var(--cyan);color:#04101c}
+main{position:relative;z-index:1;flex:1;display:flex;justify-content:center;padding:26px 16px;min-height:0}
+.panel{width:100%;max-width:860px;display:flex;flex-direction:column;min-height:0;background:var(--panel);border:1px solid var(--line);padding:16px 18px;clip-path:polygon(0 0,calc(100% - 18px) 0,100% 18px,100% 100%,18px 100%,0 calc(100% - 18px));}
+.panel h2{font-family:"Orbitron";margin:0 0 10px;font-size:12px;letter-spacing:3px;color:var(--dim);font-weight:600}
 #chat{flex:1;overflow-y:auto;border:1px solid var(--line);background:rgba(4,10,18,.5);padding:12px;min-height:0}
 .msg{border:1px solid var(--line);border-left:3px solid var(--cyan);background:rgba(20,45,70,.35);padding:8px 12px;margin:8px 0}
-.msg .who{display:flex;justify-content:space-between;font-size:10px;letter-spacing:2px;color:var(--dim);text-transform:uppercase}
-.msg .who .name{color:var(--cyan)}
-.msg .body{margin-top:5px;font-size:14px;white-space:pre-wrap;word-break:break-word}
-.msg.sys{border-left-color:var(--amber)}
-.msg.sys .name{color:var(--amber)}
+.msg .who{display:flex;justify-content:space-between;font-family:"Orbitron";font-size:10px;letter-spacing:2px;color:var(--dim);text-transform:uppercase}
+.msg .who .name{color:var(--cyan)}.msg .body{margin-top:5px;font-size:15px;white-space:pre-wrap;word-break:break-word}
+.msg.sys{border-left-color:var(--amber)}.msg.sys .name{color:var(--amber)}
 .bar{display:flex;gap:8px;margin-top:10px}
-.bar input{flex:1;background:rgba(4,10,18,.6);border:1px solid var(--line);color:var(--text);padding:10px 12px;font-size:14px;outline:none}
-.bar input:focus{border-color:var(--cyan)}
-#channel-input{max-width:140px}
-#name-input{max-width:180px}
-button.send{border:1px solid var(--cyan);background:rgba(63,210,255,.10);color:var(--cyan);padding:10px 20px;
-  font-size:12px;letter-spacing:2px;text-transform:uppercase;cursor:pointer;transition:.15s}
-button.send:hover{background:rgba(63,210,255,.25);color:#eaffff;box-shadow:0 0 14px rgba(63,210,255,.4)}
+.bar input{flex:1;background:#04101c;border:1px solid var(--line);color:var(--text);padding:10px 12px;font-family:"Rajdhani";font-size:15px;outline:none}
+.bar input:focus{border-color:var(--cyan)}#channel-input{max-width:140px}#name-input{max-width:180px}
+button.send{font-family:"Orbitron";border:1px solid var(--cyan);background:rgba(63,210,255,.10);color:var(--cyan);padding:10px 20px;font-size:12px;letter-spacing:2px;text-transform:uppercase;cursor:pointer;transition:.15s}
+button.send:hover{background:var(--cyan);color:#04101c}
 </style>
 </head>
 <body>
 
+<!-- LOGIN GUARD -->
 <script>
 (function(){
-  var s = null; try { s = JSON.parse(localStorage.getItem("jarvis.session") || "null"); } catch (e) {}
+  var s = null; 
+  try { s = JSON.parse(localStorage.getItem("jarvis.session") || "null"); } catch (e) {}
   if (!s || !s.email) location.replace("index.html");
 })();
 </script>
+
+<header>
+  <span class="logo">J.A.R.V.I.S.</span>
+  <span id="uplink" data-state="CONNECTING">UPLINK: <b>CONNECTING…</b></span>
+  <a class="hud-btn" href="index.html">⬅ Back to Console</a>
+</header>
+
+<main>
+  <section class="panel">
+    <h2>COMMS CHANNEL — PEOPLE CHAT</h2>
+    <div id="chat"></div>
+    <div class="bar">
+      <input id="channel-input" maxlength="20" placeholder="CHANNEL" autocomplete="off">
+      <input id="name-input" maxlength="24" placeholder="CALLSIGN" autocomplete="off">
+    </div>
+    <div class="bar">
+      <input id="text-input" maxlength="500" placeholder="Transmit a message…" autocomplete="off">
+      <button class="send" id="send-btn">Send</button>
+    </div>
+  </section>
+</main>
+
+<script>
 const chat = document.getElementById("chat");
 const uplink = document.getElementById("uplink");
 const channelInput = document.getElementById("channel-input");
@@ -72,11 +74,7 @@ channelInput.value = localStorage.getItem("jarvis-channel") || "lounge";
 nameInput.addEventListener("input", () => localStorage.setItem("jarvis-callsign", nameInput.value));
 channelInput.addEventListener("input", () => { localStorage.setItem("jarvis-channel", channelInput.value); switchChannel(); });
 
-const BROKERS = [
-  "wss://broker.emqx.io:8084/mqtt",
-  "wss://broker.hivemq.com:8884/mqtt"
-];
-
+const BROKERS = ["wss://broker.emqx.io:8084/mqtt", "wss://broker.hivemq.com:8884/mqtt"];
 let client = null, brokerIndex = 0, connected = false;
 let topic = topicFor(channelInput.value);
 const seen = new Set();
@@ -109,20 +107,17 @@ function system(text){ addLine("SYSTEM", text, "", "sys"); }
 function connect(){
   setStatus("CONNECTING…");
   const url = BROKERS[brokerIndex];
-
   client = mqtt.connect(url, {
     clientId: "jarvis-" + Math.random().toString(16).slice(2, 10),
     connectTimeout: 5000,
     reconnectPeriod: 4000
   });
-
   client.on("connect", () => {
     connected = true;
     setStatus("ONLINE");
     client.subscribe(topic);
-    system("Channel open: #" + channelInput.value + " via " + url.replace("wss://", "").split(":")[0]);
+    system("Channel open: #" + channelInput.value);
   });
-
   client.on("error", () => {
     if (!connected){
       brokerIndex = (brokerIndex + 1) % BROKERS.length;
@@ -130,7 +125,6 @@ function connect(){
       connect();
     }
   });
-
   client.on("message", (t, payload) => {
     if (t !== topic) return;
     let m;
@@ -158,7 +152,7 @@ function switchChannel(){
 function send(){
   const text = textInput.value.trim();
   if (!text) return;
-  if (!connected){ alert("Uplink not ready yet — check your internet connection."); return; }
+  if (!connected){ alert("Uplink not ready."); return; }
   const message = {
     id: Math.random().toString(36).slice(2) + Date.now().toString(36),
     name: nameInput.value.trim() || "Guest",
