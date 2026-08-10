@@ -1474,6 +1474,78 @@ paint();
 })();
 </script>
 <!-- ▲▲ WAKE WORD FIX ▲▲ -->
+
+<!-- ▼▼ MARK XVII PROXIMITY LIVE — paste right above </body> ▼▼ -->
+<style>
+.contact{position:absolute;width:9px;height:9px;margin:-4px;border-radius:50%;background:var(--amber);box-shadow:0 0 10px var(--amber);cursor:pointer;z-index:3}
+.contact::after{content:"";position:absolute;inset:-7px;border:1px solid var(--amber);border-radius:50%;animation:tpulse 1.6s infinite}
+.ctag{position:absolute;z-index:3;font-family:"Orbitron";font-size:.45rem;letter-spacing:.08em;color:var(--amber);transform:translate(9px,-5px);text-shadow:0 0 6px #000;white-space:nowrap}
+.pingring{position:absolute;inset:0;border:2px solid var(--cyan);border-radius:50%;animation:pring 1s ease-out forwards;z-index:2}
+@keyframes pring{from{transform:scale(.2);opacity:1}to{transform:scale(1.4);opacity:0}}
+</style>
+<script>
+(function(){
+const $q=s=>document.querySelector(s);
+const rad=$q(".radar");if(!rad||!window.mqtt)return;
+const mod=rad.closest(".module");
+const rowB=mod?mod.querySelectorAll(".rows b"):[];
+const sess=(()=>{try{return JSON.parse(localStorage.getItem("jarvis.session")||"null")}catch(e){return null}})();
+const myName=(sess&&sess.email)?sess.email.split("@")[0]:("guest-"+Math.random().toString(36).slice(2,6));
+const pid=Math.random().toString(36).slice(2,8);
+let myLat=window.__lat,myLon=window.__lon;
+if(myLat==null){(async()=>{try{const g=await(await fetch("https://ipwho.is/")).json();myLat=g.latitude;myLon=g.longitude;}catch(e){}})();}
+let contacts={},alerted={};
+const pc=mqtt.connect("wss://broker.emqx.io:8084/mqtt",{clientId:"jarvis-prox-"+pid,connectTimeout:5000,reconnectPeriod:4000});
+pc.on("connect",()=>{pc.subscribe(["jarvis-v5/presence","jarvis-v5/ping"]);
+ setInterval(()=>{try{pc.publish("jarvis-v5/presence",JSON.stringify({id:pid,name:myName,ts:Date.now(),lat:myLat,lon:myLon}));}catch(e){}},4000);});
+pc.on("message",(t,p)=>{let m;try{m=JSON.parse(p.toString());}catch(e){return;}
+ if(t==="jarvis-v5/presence"){if(m.id!==pid){contacts[m.id]=m;render();}}
+ if(t==="jarvis-v5/ping"&&m.to===pid){flash();try{sfx(1500,.1);}catch(e){}
+  try{logMsg("jarvis","📡 Incoming ping from "+m.from+". They know you're on the grid, sir.");}catch(e){}
+  rtx("📡 PING from "+m.from,false);}});
+function rtx(t,ok){const d=document.createElement("div");d.className="rtoast"+(ok?" ok":" bad");d.textContent=t;document.body.appendChild(d);requestAnimationFrame(()=>d.classList.add("on"));setTimeout(()=>{d.classList.remove("on");setTimeout(()=>d.remove(),400);},2600);}
+function km(a,b,c,d){const R=6371,r=Math.PI/180,dLa=(c-a)*r,dLo=(d-b)*r,s=Math.sin(dLa/2)**2+Math.cos(a*r)*Math.cos(c*r)*Math.sin(dLo/2)**2;return 2*R*Math.asin(Math.sqrt(s));}
+function brg(a,b,c,d){const r=Math.PI/180,y=Math.sin((d-b)*r)*Math.cos(c*r),x=Math.cos(a*r)*Math.sin(c*r)-Math.sin(a*r)*Math.cos(c*r)*Math.cos((d-b)*r);return (Math.atan2(y,x)/r+360)%360;}
+function flash(){const r=document.createElement("div");r.className="pingring";rad.appendChild(r);setTimeout(()=>r.remove(),1000);}
+function render(){
+ const now=Date.now();Object.keys(contacts).forEach(k=>{if(now-contacts[k].ts>12000)delete contacts[k];});
+ rad.querySelectorAll(".contact,.ctag").forEach(e=>e.remove());
+ let close=false,list=[];
+ Object.values(contacts).forEach(c=>{
+  if(c.lat==null||myLat==null)return;
+  const d=km(myLat,myLon,c.lat,c.lon),b=brg(myLat,myLon,c.lat,c.lon);
+  list.push({name:c.name,d:d,id:c.id});
+  if(d<5)close=true;
+  const rr=d<1?8:Math.min(44,10+Math.log10(d+1)*9);
+  const x=50+Math.sin(b*Math.PI/180)*rr,y=50-Math.cos(b*Math.PI/180)*rr;
+  const dot=document.createElement("span");dot.className="contact";dot.style.left=x+"%";dot.style.top=y+"%";dot.dataset.id=c.id;dot.title=c.name;
+  dot.onclick=()=>{try{pc.publish("jarvis-v5/ping",JSON.stringify({to:c.id,from:myName}));rtx("📡 Ping sent to "+c.name,true);}catch(e){}};
+  rad.appendChild(dot);
+  const tag=document.createElement("span");tag.className="ctag";tag.style.left=x+"%";tag.style.top=y+"%";
+  tag.textContent=c.name+" · "+(d<1?"<1":Math.round(d))+"km";
+  rad.appendChild(tag);
+  if(d<5&&!alerted[c.id]){alerted[c.id]=1;rtx("⚠ CONTACT WITHIN 5 KM: "+c.name,false);try{logMsg("jarvis","⚠ Proximity alert: "+c.name+" is "+Math.round(d)+" km out. Friend or foe, sir?");speak("Proximity alert. "+c.name+" is close.");}catch(e){}}
+ });
+ if(rowB[0])rowB[0].textContent=Object.keys(contacts).length;
+ if(rowB[1])rowB[1].textContent=close?"CLOSE!":"NONE";
+ if(rowB[1])rowB[1].style.color=close?"var(--red)":"";
+ window.__proxList=list;
+}
+setInterval(render,3000);
+if(typeof route==="function"){const _r=route;route=async function(t){const low=String(t).toLowerCase();
+ if(low.includes("who is near")||low.includes("proximity report")||low.includes("any contacts")){
+  const l=(window.__proxList||[]);
+  if(!l.length)return "No contacts on the grid, sir. You are gloriously alone.";
+  return "Proximity report: "+l.sort((a,b)=>a.d-b.d).slice(0,3).map(c=>c.name+" at "+Math.round(c.d)+" km").join(", ")+". Click a blip to ping them.";
+ }
+ if(low.includes("ping everyone")||low.includes("ping all")){
+  Object.values(contacts).forEach(c=>{try{pc.publish("jarvis-v5/ping",JSON.stringify({to:c.id,from:myName}));}catch(e){}});
+  return "Ping broadcast to all contacts, sir.";
+ }
+ return _r(t);};}
+})();
+</script>
+<!-- ▲▲ MARK XVII PROXIMITY LIVE ▲▲ -->
   
 </body>
 </html>
