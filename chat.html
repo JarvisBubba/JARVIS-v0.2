@@ -26,6 +26,11 @@ main{position:relative;z-index:1;flex:1;display:flex;justify-content:center;padd
 .bar{display:flex;gap:8px;margin-top:10px}
 .bar input{flex:1;background:#04101c;border:1px solid var(--line);color:var(--text);padding:10px 12px;font-family:"Rajdhani";font-size:15px;outline:none}
 .bar input:focus{border-color:var(--cyan)}#channel-input{max-width:140px}#name-input{max-width:180px}
+#chat{scrollbar-width:thin;scrollbar-color:var(--cyan) #04101c}
+#chat::-webkit-scrollbar{width:8px}
+#chat::-webkit-scrollbar-track{background:#04101c;border-left:1px solid var(--line)}
+#chat::-webkit-scrollbar-thumb{background:linear-gradient(180deg,var(--cyan-dim),var(--cyan));border:1px solid var(--line);box-shadow:0 0 10px rgba(63,210,255,.45)}
+#chat::-webkit-scrollbar-thumb:hover{background:var(--cyan);box-shadow:0 0 16px rgba(63,210,255,.85)}
 button.send{font-family:"Orbitron";border:1px solid var(--cyan);background:rgba(63,210,255,.10);color:var(--cyan);padding:10px 20px;font-size:12px;letter-spacing:2px;text-transform:uppercase;cursor:pointer;transition:.15s}
 button.send:hover{background:var(--cyan);color:#04101c}
 </style>
