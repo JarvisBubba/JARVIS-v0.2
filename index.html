@@ -1048,6 +1048,109 @@ try{
 })();
 </script>
 <!-- ▲▲ RADAR MAP LAYER ▲▲ -->
+
+<!-- ▼▼ MARK XIV-A — paste right above </body> ▼▼ -->
+<style>
+#ticker{overflow:hidden;white-space:nowrap;border-top:1px solid var(--line);font-family:"Orbitron";font-size:.55rem;letter-spacing:.2em;color:var(--cyan-dim);padding:4px 0}
+#ticker span{display:inline-block;animation:tick 26s linear infinite}
+@keyframes tick{from{transform:translateX(0)}to{transform:translateX(-50%)}}
+#apodImg{width:100%;border:1px solid var(--line);opacity:.85}
+.launch-num{font-family:"Orbitron";font-size:1rem;color:var(--amber);letter-spacing:.08em;text-shadow:0 0 10px rgba(255,181,77,.5)}
+</style>
+<script>
+(function(){
+const $q=s=>document.querySelector(s);
+function rt(t,ok){const d=document.createElement("div");d.className="rtoast"+(ok?" ok":" bad");d.textContent=t;document.body.appendChild(d);requestAnimationFrame(()=>d.classList.add("on"));setTimeout(()=>{d.classList.remove("on");setTimeout(()=>d.remove(),400);},2600);}
+
+/* ===== 1) NEXT LAUNCH ===== */
+const asideR=document.querySelectorAll(".hud aside")[1]||document.querySelector(".hud aside");
+if(asideR)asideR.insertAdjacentHTML("afterbegin",'<div class="module"><h3>NEXT LAUNCH <span>▮</span></h3><div class="launch-num" id="lxT">--</div><div class="rows"><div><span>MISSION</span><b id="lxN">--</b></div><div><span>PAD</span><b id="lxP">--</b></div></div></div>');
+let lxDate=null;
+(async()=>{try{const d=await(await fetch("https://ll.thespacedevs.com/2.2.0/launch/upcoming/?limit=1")).json();const L=d.results&&d.results[0];if(!L)return;lxDate=new Date(L.net);$q("#lxN").textContent=(L.name||"").slice(0,42);$q("#lxP").textContent=((L.pad&&L.pad.location&&L.pad.location.name)||"").slice(0,32);}catch(e){}})();
+setInterval(()=>{if(!lxDate)return;let s=Math.max(0,Math.floor((lxDate-Date.now())/1000));const el=$q("#lxT");if(el)el.textContent="T‑"+Math.floor(s/86400)+"d "+Math.floor(s%86400/3600)+"h "+Math.floor(s%3600/60)+"m "+(s%60)+"s";},1000);
+
+/* ===== 2) NASA APOD ===== */
+const asideL=document.querySelectorAll(".hud aside")[0]||document.querySelector(".hud aside");
+if(asideL)asideL.insertAdjacentHTML("beforeend",'<div class="module"><h3>SPACE PHOTO <span>▮</span></h3><img id="apodImg" alt=""><div class="rows"><div><span>TITLE</span><b id="apodT">--</b></div></div></div>');
+(async()=>{try{const d=await(await fetch("https://api.nasa.gov/planetary/apod?api_key=DEMO_KEY")).json();if(d&&d.media_type==="image"&&d.url)$q("#apodImg").src=d.url;$q("#apodT").textContent=(d.title||"--").slice(0,42);}catch(e){}})();
+
+/* ===== 3) AQI + world clocks ===== */
+const envMod=$q("#temp")?$q("#temp").closest(".module"):null;
+if(envMod)envMod.insertAdjacentHTML("beforeend",'<div class="rows"><div><span>AQI</span><b id="aqi">--</b></div><div><span>NY</span><b id="wcNY">--</b></div><div><span>LDN</span><b id="wcLDN">--</b></div><div><span>TYO</span><b id="wcTYO">--</b></div></div>');
+(async()=>{try{if(window.__lat==null)return;const d=await(await fetch("https://air-quality-api.open-meteo.com/v1/air-quality?latitude="+window.__lat+"&longitude="+window.__lon+"&current=us_aqi")).json();const a=$q("#aqi");if(a&&d.current)a.textContent=Math.round(d.current.us_aqi);}catch(e){}})();
+function clocks(){const f=tz=>new Intl.DateTimeFormat("en-GB",{hour:"2-digit",minute:"2-digit",timeZone:tz}).format(new Date());const a=$q("#wcNY");if(a)a.textContent=f("America/New_York");const b=$q("#wcLDN");if(b)b.textContent=f("Europe/London");const c=$q("#wcTYO");if(c)c.textContent=f("Asia/Tokyo");}
+clocks();setInterval(clocks,1000);
+
+/* ===== 4) crypto ticker ===== */
+const foot=document.querySelector("footer");
+if(foot){const tk=document.createElement("div");tk.id="ticker";foot.appendChild(tk);let tickTxt="STARK INDUSTRIES · BTC -- · ETH -- · SI-STD 100.00 · ";
+ function paint(){tk.innerHTML="<span>"+tickTxt+tickTxt+tickTxt+tickTxt+"</span>";}
+ async function prices(){try{const d=await(await fetch("https://api.binance.com/api/v3/ticker/price?symbols=%5B%22BTCUSDT%22,%22ETHUSDT%22%5D")).json();const b=d.find(x=>x.symbol==="BTCUSDT"),e=d.find(x=>x.symbol==="ETHUSDT");tickTxt="STARK INDUSTRIES · BTC $"+Math.round(+b.price).toLocaleString()+" · ETH $"+Math.round(+e.price).toLocaleString()+" · SI-STD 100.00 · ";}catch(e){}paint();}
+ prices();setInterval(prices,30000);}
+
+/* ===== 12) desktop notifications ===== */
+let notifOn=localStorage.getItem("jarvis.notif")==="1";
+function notify(t){if(notifOn&&"Notification" in window&&Notification.permission==="granted"&&document.hidden)try{new Notification("J.A.R.V.I.S.",{body:t});}catch(e){}}
+if(typeof logMsg==="function"){const _lm=logMsg;logMsg=function(w,t){if(w==="jarvis"&&(/reminder/i.test(t)||t.includes("⚠")))notify(t);return _lm(w,t);};}
+try{const bc=new BroadcastChannel("jarvis-bus");bc.onmessage=e=>{if(e.data&&e.data.t==="rt")notify(e.data.x);};}catch(e){}
+
+/* ===== 7) daily ship's log ===== */
+function todayKey(){return new Date().toISOString().slice(0,10);}
+async function makeLog(){const k="jarvis.log."+todayKey();let L=localStorage.getItem(k);if(L)return L;
+ const P2=(window.P)?P():null;const addr=P2?P2.addr():"sir";
+ if(window.S&&S.geminiKey){try{const r=await fetch("https://generativelanguage.googleapis.com/v1beta/models/gemini-2.0-flash:generateContent?key="+S.geminiKey,{method:"POST",headers:{"Content-Type":"application/json"},body:JSON.stringify({contents:[{parts:[{text:"You are JARVIS. Write a 60-word captain's ship's log for "+new Date().toDateString()+", addressing "+addr+", dry wit, all systems nominal."}]}]})});const d=await r.json();L=d.candidates&&d.candidates[0]&&d.candidates[0].content.parts[0].text;}catch(e){}}
+ if(!L)L="Ship's log, "+new Date().toDateString()+". All systems nominal, "+addr+". The reactor hums, the radar watches the sky, and your typing remains… adequate. — J.A.R.V.I.S.";
+ localStorage.setItem(k,L);return L;}
+new MutationObserver(()=>{const g=$q("#gate");if(g&&g.style.display==="none")makeLog();}).observe($q("#gate"),{attributes:true,attributeFilter:["style"]});
+
+/* ===== 5) site manual Q&A + 6) summarize ===== */
+const MANUAL=[
+[["radar","precip"],"The PRECIP RADAR shows live rain/snow radar over your city on a dark map — the pulsing dot is you, COVERAGE is the % of rain pixels."],
+[["people chat","comms"],"💬 CHAT opens the multiplayer comms channel. Pick a CHANNEL + CALLSIGN; messages sync live to everyone on it."],
+[["approve","request access"],"New users REQUEST ACCESS with a reason; the two owner emails approve or deny from the 🛡 ADMIN dashboard."],
+[["admin"],"The 🛡 ADMIN dashboard (owners only) controls access mode, approvals, polls, broadcasts and purges."],
+[["targeting"],"Say 'engage targeting' or press T: red HUD, lock rings, and target-practice blips with a score report."],
+[["sketch","draw"],"HOLO-SKETCH (🎮 GAMES) is a shared drawing board — everyone online draws on the same canvas live."],
+[["poll"],"Admins launch polls from the dashboard; everyone votes and the bars update live."],
+[["hall of fame","hof"],"'sign the hall of fame' adds your signed holo-card; admins can strike entries."],
+[["id card"],"'show my id' renders a downloadable Stark clearance card with your stats."],
+[["suit","theme"],"SUIT LINEUP swaps palettes: Mark III red, War Machine gunmetal, Stealth green."],
+[["radio"],"📻 RADIO plays generative synthwave synthesized live in your browser — no files."],
+[["hum"],"HUM adds a low reactor ambient drone."],
+[["wake"],"WAKE arms continuous listening for 'Hey JARVIS'."],
+[["screen share","vision"],"👁 SHARE lets JARVIS watch a tab or screen; 'analyze screen' makes him comment on it (needs Gemini key)."],
+[["commands"],"Say 'show commands' or hit ≡ COMMANDS for the full voice manifest."],
+[["games","mainframe","connect","typing"],"🎮 GAMES: Hack the Mainframe, Holo-Sketch, Connect-4 vs me, Typing Certification."],
+[["global core","global reactor"],"Every visitor's reactor clicks charge one shared GLOBAL CORE — watch it climb together."],
+[["briefing"],"DAILY BRIEFING pulls today's briefing issue from your GitHub repo."],
+[["seismic","earthquake"],"SEISMIC lists the strongest real quake of the last hour (USGS)."],
+[["intel","headlines"],"GLOBAL INTEL streams top Hacker News headlines."],
+[["launch"],"NEXT LAUNCH counts down to the next real rocket launch on Earth."],
+[["apod","space photo"],"SPACE PHOTO shows NASA's Astronomy Picture of the Day."],
+[["aqi","air quality"],"AQI is your local air-quality index: 0-50 good, 100+ unhealthy, 150+ nasty."],
+[["notifications"],"Say 'notifications on' — reminders and broadcasts then pop as OS notifications when the tab is hidden."],
+[["log","ship's log"],"'read the log' reads today's captain's log."],
+[["login","account","sign in"],"You need an email account to enter. RESTRICTED mode = approval required; OPEN mode = instant accounts."],
+[["ticker"],"The footer ticker shows live BTC/ETH prices from Binance."],
+[["clocks"],"ENVIRONMENT now shows live New York / London / Tokyo clocks."],
+];
+if(typeof route==="function"){const _r=route;route=async function(t){const low=String(t).toLowerCase();
+ if(/^(what does|what do|how do|how does|who can|explain|what is)/.test(low)){for(const e of MANUAL){for(const k of e[0]){if(low.includes(k))return e[1];}}}
+ const sm=low.includes("summarize")?String(t).match(/(https?:\/\/\S+)/i):null;
+ if(sm){if(!(window.S&&S.geminiKey))return "Summarizing needs a Gemini key in ⚙ SETTINGS, sir.";
+  (async()=>{rt("📄 Reading the page…",true);try{
+   const txt=await(await fetch("https://r.jina.ai/"+sm[1])).text();
+   const r=await fetch("https://generativelanguage.googleapis.com/v1beta/models/gemini-2.0-flash:generateContent?key="+S.geminiKey,{method:"POST",headers:{"Content-Type":"application/json"},body:JSON.stringify({contents:[{parts:[{text:"You are JARVIS. Give a 3-bullet TL;DR in your dry voice of:\n"+txt.slice(0,4000)}]}]})});
+   const d=await r.json();const s2=d.candidates&&d.candidates[0]&&d.candidates[0].content.parts[0].text;try{logMsg("jarvis","📄 "+s2);}catch(e){}try{window.speak&&speak(s2);}catch(e){}
+  }catch(e){rt("Couldn't read that page.",false);}})();
+  return "On it — reading the page, sir.";}
+ if(low.includes("read the log")||low.includes("ship's log")||low.includes("read me the log"))return await makeLog();
+ if(low.includes("notifications on")){notifOn=true;localStorage.setItem("jarvis.notif","1");if("Notification" in window&&Notification.permission!=="granted")Notification.requestPermission();return "Notifications armed. I'll tap you on the shoulder.";}
+ if(low.includes("notifications off")){notifOn=false;localStorage.setItem("jarvis.notif","0");return "Notifications stood down.";}
+ return _r(t);};}
+})();
+</script>
+<!-- ▲▲ MARK XIV-A ▲▲ -->
   
 </body>
 </html>
