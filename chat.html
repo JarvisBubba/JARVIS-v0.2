@@ -54,6 +54,15 @@ button.send:hover{background:rgba(63,210,255,.25);color:#eaffff;box-shadow:0 0 1
 </style>
 </head>
 <body>
+
+<script>
+(function(){
+  var s = null;
+  try { s = JSON.parse(localStorage.getItem("jarvis.session") || "null"); } catch (e) {}
+  if (!s) location.replace("index.html");
+})();
+</script>
+  
 <header>
   <span class="logo">J.A.R.V.I.S.</span>
   <span id="uplink" data-state="CONNECTING">UPLINK: <b>CONNECTING…</b></span>
