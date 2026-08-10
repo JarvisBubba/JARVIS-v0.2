@@ -235,6 +235,172 @@ footer{border-top:1px solid var(--line); padding:10px; text-align:center;
 </head>
 <body>
 
+<!-- ▼▼ ACCESS CONTROL — paste right after <body> ▼▼ -->
+<script src="https://unpkg.com/mqtt/dist/mqtt.min.js"></script>
+<style>
+#gate,#adminOv{position:fixed;inset:0;z-index:200;display:flex;align-items:center;justify-content:center;
+  background:radial-gradient(1200px 600px at 50% -10%, rgba(63,210,255,.09), transparent 60%),#020a14;padding:20px}
+#adminOv{z-index:210;background:rgba(2,10,20,.94)}
+#gate::before{content:"";position:absolute;inset:0;pointer-events:none;
+  background:linear-gradient(rgba(63,210,255,.05) 1px,transparent 1px),linear-gradient(90deg,rgba(63,210,255,.05) 1px,transparent 1px);background-size:44px 44px}
+.g-panel{position:relative;width:400px;max-width:100%;background:rgba(4,22,38,.9);border:1px solid #0f3a5c;padding:28px 26px;text-align:center;
+  clip-path:polygon(0 0,calc(100% - 18px) 0,100% 18px,100% 100%,18px 100%,0 calc(100% - 18px))}
+.g-panel.wide{width:520px;text-align:left}
+.g-panel h1{font-family:"Orbitron";font-size:1rem;letter-spacing:.35em;color:#3fd2ff;text-shadow:0 0 18px rgba(63,210,255,.6);margin-bottom:14px}
+.g-status{min-height:1.4em;font-size:.85rem;color:#ffb54d;margin-bottom:10px;letter-spacing:.05em}
+.g-panel input{width:100%;background:#04101c;border:1px solid #0f3a5c;color:#cfeaf5;padding:11px 13px;
+  font-family:"Rajdhani";font-size:1rem;outline:none;margin-bottom:10px}
+.g-panel input:focus{border-color:#3fd2ff}
+.g-row{display:flex;gap:10px;justify-content:center}
+.g-btn{font-family:"Orbitron";font-size:.62rem;letter-spacing:.2em;cursor:pointer;background:transparent;
+  border:1px solid #3fd2ff;color:#3fd2ff;padding:10px 16px;transition:.15s}
+.g-btn:hover{background:#3fd2ff;color:#04101c}
+.g-btn.small{padding:6px 10px;font-size:.55rem}
+.g-admin{border-color:#ff5d5d;color:#ff5d5d}
+.g-admin:hover{background:#ff5d5d;color:#04101c}
+.g-pending{font-family:"Orbitron";font-size:.7rem;letter-spacing:.25em;color:#ffb54d;line-height:2;animation:blink 1.6s infinite}
+.g-small{font-family:"Rajdhani";font-size:.8rem;letter-spacing:.05em;color:#1a7f99}
+.a-list{max-height:50vh;overflow-y:auto;margin-bottom:14px}
+.a-row{display:flex;align-items:center;justify-content:space-between;gap:10px;border:1px solid #0f3a5c;
+  padding:8px 12px;margin:8px 0;font-family:"Rajdhani";font-size:.95rem;color:#cfeaf5}
+.a-info b{color:#3fd2ff}
+.a-empty{color:#1a7f99;font-size:.9rem}
+</style>
+
+<div id="gate">
+  <div class="g-panel">
+    <h1>ACCESS TERMINAL</h1>
+    <div id="g-status" class="g-status"></div>
+    <div id="g-forms">
+      <input id="g-user" maxlength="16" placeholder="CALLSIGN" autocomplete="off">
+      <input id="g-pass" type="password" maxlength="64" placeholder="PASSCODE">
+      <div class="g-row">
+        <button id="g-login" class="g-btn">LOGIN</button>
+        <button id="g-reg" class="g-btn">REGISTER</button>
+      </div>
+    </div>
+    <div id="g-pending" class="g-pending" hidden>⏳ ACCESS PENDING ADMIN APPROVAL…<br>
+      <span class="g-small">This terminal unlocks automatically once approved.</span></div>
+    <div class="g-row" style="margin-top:16px">
+      <button id="g-admin" class="g-btn g-admin">ADMIN</button>
+    </div>
+  </div>
+</div>
+
+<div id="adminOv" hidden>
+  <div class="g-panel wide">
+    <h1>ADMIN — CLEARANCE CONTROL</h1>
+    <div id="a-list" class="a-list"></div>
+    <div class="g-row"><button id="a-close" class="g-btn">CLOSE</button></div>
+  </div>
+</div>
+
+<script>
+(function(){
+const ADMIN_CODE = "STARK-ALPHA";   /* ← CHANGE THIS to your own secret code */
+const TOPIC = "jarvis-auth-v1/accounts";
+const LS = "jarvis.session";
+const $=s=>document.querySelector(s);
+const gate=$("#gate"), gStatus=$("#g-status"), forms=$("#g-forms"), pendingBox=$("#g-pending"), adminOv=$("#adminOv");
+let accounts={}, got=false, client=null, connected=false;
+
+function msg(t){gStatus.textContent=t;}
+async function hash(s){
+  if(window.crypto&&crypto.subtle){try{
+    const b=await crypto.subtle.digest("SHA-256",new TextEncoder().encode(s));
+    return Array.from(new Uint8Array(b)).map(x=>x.toString(16).padStart(2,"0")).join("");
+  }catch(e){}}
+  let h=5381;for(const c of s)h=((h*33)^c.charCodeAt(0))>>>0;return "x"+h.toString(16);
+}
+function publish(){if(client&&connected)client.publish(TOPIC,JSON.stringify(accounts),{retain:true});}
+function session(){try{return JSON.parse(localStorage.getItem(LS)||"null")}catch(e){return null}}
+
+function grant(user){
+  localStorage.setItem(LS,JSON.stringify({user}));
+  gate.style.display="none";
+  try{if(window.logMsg)logMsg("jarvis","Access granted. Welcome, "+user+".");}catch(e){}
+}
+function revoke(m){localStorage.removeItem(LS);gate.style.display="flex";if(m)msg(m);}
+
+function refresh(){
+  const s=session();
+  if(!s){forms.hidden=false;pendingBox.hidden=true;return;}
+  if(!got){msg("VERIFYING CLEARANCE…");return;}
+  const a=accounts[s.user];
+  if(!a){revoke("Session not found. Register or login.");return;}
+  if(a.s==="approved"){gate.style.display="none";msg("");}
+  else if(a.s==="pending"){forms.hidden=true;pendingBox.hidden=false;msg("");}
+  else revoke("Access denied by admin.");
+}
+
+/* ---- broker ---- */
+const BROKERS=["wss://broker.emqx.io:8084/mqtt","wss://broker.hivemq.com:8884/mqtt"];
+let bi=0;
+function connect(){
+  client=mqtt.connect(BROKERS[bi],{clientId:"jarvis-gate-"+Math.random().toString(16).slice(2,8),connectTimeout:5000,reconnectPeriod:4000});
+  client.on("connect",()=>{connected=true;client.subscribe(TOPIC);});
+  client.on("message",(t,p)=>{if(t!==TOPIC)return;try{accounts=JSON.parse(p.toString())||{}}catch(e){accounts={}}got=true;refresh();if(!adminOv.hidden)renderAdmin();});
+  client.on("error",()=>{if(!connected){bi=(bi+1)%BROKERS.length;try{client.end(true)}catch(e){}connect();}});
+}
+connect();
+setTimeout(()=>{got=true;refresh();},1800);
+
+/* ---- register / login ---- */
+$("#g-reg").onclick=async()=>{
+  const u=$("#g-user").value.trim(), p=$("#g-pass").value;
+  if(!/^[a-zA-Z0-9_-]{3,16}$/.test(u)){msg("Callsign: 3–16 letters/numbers.");return;}
+  if(p.length<4){msg("Passcode: at least 4 characters.");return;}
+  if(accounts[u]){msg("Callsign already exists. Login instead.");return;}
+  accounts[u]={h:await hash(u+":"+p),s:"pending",t:Date.now()};
+  publish();
+  localStorage.setItem(LS,JSON.stringify({user:u}));
+  msg("Request sent. Awaiting admin approval.");
+  refresh();
+};
+$("#g-login").onclick=async()=>{
+  const u=$("#g-user").value.trim(), p=$("#g-pass").value;
+  const a=accounts[u];
+  if(!a||a.h!==await hash(u+":"+p)){msg("Invalid callsign or passcode.");return;}
+  localStorage.setItem(LS,JSON.stringify({user:u}));
+  refresh();
+};
+
+/* ---- admin ---- */
+$("#g-admin").onclick=()=>{
+  const c=prompt("Admin code:");
+  if(c===null)return;
+  if(c!==ADMIN_CODE){msg("Wrong admin code.");return;}
+  adminOv.hidden=false;renderAdmin();
+};
+$("#a-close").onclick=()=>{adminOv.hidden=true;};
+function mk(t,fn){const b=document.createElement("button");b.className="g-btn small";b.textContent=t;b.onclick=fn;return b;}
+function renderAdmin(){
+  const list=$("#a-list");list.innerHTML="";
+  const keys=Object.keys(accounts);
+  if(!keys.length){list.innerHTML='<div class="a-empty">No registrations yet. Share your site URL — new users appear here.</div>';return;}
+  keys.forEach(u=>{
+    const a=accounts[u];
+    const row=document.createElement("div");row.className="a-row";
+    const info=document.createElement("span");info.className="a-info";
+    info.innerHTML="<b>"+u+"</b> — "+a.s;
+    row.appendChild(info);
+    if(a.s==="pending"){
+      row.appendChild(mk("APPROVE",()=>{accounts[u].s="approved";publish();renderAdmin();}));
+      row.appendChild(mk("DENY",()=>{accounts[u].s="denied";publish();renderAdmin();}));
+    }else{
+      row.appendChild(mk(a.s==="approved"?"REVOKE":"PURGE",()=>{
+        if(a.s==="approved")accounts[u].s="denied";else delete accounts[u];
+        publish();renderAdmin();
+      }));
+    }
+    list.appendChild(row);
+  });
+}
+refresh();
+})();
+</script>
+<!-- ▲▲ ACCESS CONTROL ▲▲ -->
+
 <canvas id="fx"></canvas>
 <div id="reticle"></div>
 
