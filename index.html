@@ -907,6 +907,47 @@ if(!localStorage.getItem("jarvis.cleanhint")){localStorage.setItem("jarvis.clean
 })();
 </script>
 <!-- ▲▲ MARK XIII CLEAN DECK ▲▲ -->
+
+<!-- ▼▼ VOICE RESTORE — paste right above </body> ▼▼ -->
+<script>
+(function(){
+ if(!("speechSynthesis" in window))return;
+ let VOICES=[];const loadV=()=>{VOICES=speechSynthesis.getVoices();};
+ loadV();speechSynthesis.addEventListener("voiceschanged",loadV);
+ function best(){return VOICES.find(v=>/en-GB/i.test(v.lang)&&/male|daniel|george|arthur|uk english male/i.test(v.name))||VOICES.find(v=>/en-GB/i.test(v.lang))||VOICES.find(v=>v.lang&&v.lang.startsWith("en"))||null;}
+ /* gesture unlock — satisfies the browser's one-click audio rule */
+ let unlocked=false;
+ function unlock(){if(unlocked)return;unlocked=true;try{speechSynthesis.resume();const w=new SpeechSynthesisUtterance(" ");w.volume=0;speechSynthesis.speak(w);}catch(e){}}
+ addEventListener("pointerdown",unlock);addEventListener("keydown",unlock);
+ /* final, race-safe, tuned speak() */
+ window.speak=function(text){
+  if(!window.S||S.voice===false)return;
+  try{
+   speechSynthesis.cancel();
+   setTimeout(()=>{
+    const u=new SpeechSynthesisUtterance(String(text).replace(/[^\x00-\x7F]/g,""));
+    const v=best();if(v)u.voice=v;
+    u.rate=.95;u.pitch=.85;
+    const o=document.querySelector("#orb"),st=document.querySelector("#state");
+    u.onstart=()=>{if(o)o.classList.add("speaking");if(st)st.textContent="SPEAKING";};
+    u.onend=u.onerror=()=>{
+      if(o)o.classList.remove("speaking");
+      if(st&&!o.classList.contains("alarm"))st.textContent="STANDBY";
+      if(localStorage.getItem("jarvis.convo")==="1"){setTimeout(()=>{try{if(window.rec){rec.start();if(o)o.classList.add("listening");}}catch(e){}},400);}
+    };
+    speechSynthesis.speak(u);
+   },60);
+  }catch(e){}
+ };
+ /* voice commands for the voice itself */
+ if(typeof route==="function"){const _r=route;route=async function(t){const low=String(t).toLowerCase();
+  if(low.includes("voice on")){S.voice=true;localStorage.setItem("jarvis.settings",JSON.stringify(S));return "Voice restored, sir.";}
+  if(low.includes("voice off")){S.voice=false;localStorage.setItem("jarvis.settings",JSON.stringify(S));speechSynthesis.cancel();return "Voice muted.";}
+  if(low.includes("test voice")){window.speak("Voice systems online. How does this sound, sir?");return null;}
+  return _r(t);};}
+})();
+</script>
+<!-- ▲▲ VOICE RESTORE ▲▲ -->
   
 </body>
 </html>
