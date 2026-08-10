@@ -235,7 +235,7 @@ footer{border-top:1px solid var(--line); padding:10px; text-align:center;
 </head>
 <body>
 
-<!-- ▼▼ ACCESS CONTROL — paste right after <body> ▼▼ -->
+<!-- ▼▼ ACCESS CONTROL v2 — paste right after <body> ▼▼ -->
 <script src="https://unpkg.com/mqtt/dist/mqtt.min.js"></script>
 <style>
 #gate,#adminOv{position:fixed;inset:0;z-index:200;display:flex;align-items:center;justify-content:center;
@@ -245,7 +245,7 @@ footer{border-top:1px solid var(--line); padding:10px; text-align:center;
   background:linear-gradient(rgba(63,210,255,.05) 1px,transparent 1px),linear-gradient(90deg,rgba(63,210,255,.05) 1px,transparent 1px);background-size:44px 44px}
 .g-panel{position:relative;width:400px;max-width:100%;background:rgba(4,22,38,.9);border:1px solid #0f3a5c;padding:28px 26px;text-align:center;
   clip-path:polygon(0 0,calc(100% - 18px) 0,100% 18px,100% 100%,18px 100%,0 calc(100% - 18px))}
-.g-panel.wide{width:520px;text-align:left}
+.g-panel.wide{width:560px;text-align:left}
 .g-panel h1{font-family:"Orbitron";font-size:1rem;letter-spacing:.35em;color:#3fd2ff;text-shadow:0 0 18px rgba(63,210,255,.6);margin-bottom:14px}
 .g-status{min-height:1.4em;font-size:.85rem;color:#ffb54d;margin-bottom:10px;letter-spacing:.05em}
 .g-panel input{width:100%;background:#04101c;border:1px solid #0f3a5c;color:#cfeaf5;padding:11px 13px;
@@ -256,40 +256,31 @@ footer{border-top:1px solid var(--line); padding:10px; text-align:center;
   border:1px solid #3fd2ff;color:#3fd2ff;padding:10px 16px;transition:.15s}
 .g-btn:hover{background:#3fd2ff;color:#04101c}
 .g-btn.small{padding:6px 10px;font-size:.55rem}
-.g-admin{border-color:#ff5d5d;color:#ff5d5d}
-.g-admin:hover{background:#ff5d5d;color:#04101c}
-.g-pending{font-family:"Orbitron";font-size:.7rem;letter-spacing:.25em;color:#ffb54d;line-height:2;animation:blink 1.6s infinite}
-.g-small{font-family:"Rajdhani";font-size:.8rem;letter-spacing:.05em;color:#1a7f99}
-.a-list{max-height:50vh;overflow-y:auto;margin-bottom:14px}
+#admin-btn{border-color:#ffb54d;color:#ffb54d;background:rgba(255,181,77,.08)}
+#admin-btn:hover{background:#ffb54d;color:#04101c}
+.a-list{max-height:55vh;overflow-y:auto;margin-bottom:14px}
 .a-row{display:flex;align-items:center;justify-content:space-between;gap:10px;border:1px solid #0f3a5c;
   padding:8px 12px;margin:8px 0;font-family:"Rajdhani";font-size:.95rem;color:#cfeaf5}
-.a-info b{color:#3fd2ff}
-.a-empty{color:#1a7f99;font-size:.9rem}
+.a-row b{color:#3fd2ff}
+.a-empty{color:#1a7f99;font-size:.85rem;letter-spacing:.1em}
 </style>
 
 <div id="gate">
   <div class="g-panel">
     <h1>ACCESS TERMINAL</h1>
     <div id="g-status" class="g-status"></div>
-    <div id="g-forms">
-      <input id="g-user" maxlength="16" placeholder="CALLSIGN" autocomplete="off">
-      <input id="g-pass" type="password" maxlength="64" placeholder="PASSCODE">
-      <div class="g-row">
-        <button id="g-login" class="g-btn">LOGIN</button>
-        <button id="g-reg" class="g-btn">REGISTER</button>
-      </div>
-    </div>
-    <div id="g-pending" class="g-pending" hidden>⏳ ACCESS PENDING ADMIN APPROVAL…<br>
-      <span class="g-small">This terminal unlocks automatically once approved.</span></div>
-    <div class="g-row" style="margin-top:16px">
-      <button id="g-admin" class="g-btn g-admin">ADMIN</button>
+    <input id="g-email" maxlength="60" placeholder="EMAIL" autocomplete="off">
+    <input id="g-pass" type="password" maxlength="64" placeholder="PASSCODE">
+    <div class="g-row">
+      <button id="g-login" class="g-btn">SIGN IN</button>
+      <button id="g-reg" class="g-btn">CREATE ACCOUNT</button>
     </div>
   </div>
 </div>
 
 <div id="adminOv" hidden>
   <div class="g-panel wide">
-    <h1>ADMIN — CLEARANCE CONTROL</h1>
+    <h1>ADMIN — USER CONTROL</h1>
     <div id="a-list" class="a-list"></div>
     <div class="g-row"><button id="a-close" class="g-btn">CLOSE</button></div>
   </div>
@@ -297,11 +288,11 @@ footer{border-top:1px solid var(--line); padding:10px; text-align:center;
 
 <script>
 (function(){
-const ADMIN_CODE = "STARK-ALPHA";   /* ← CHANGE THIS to your own secret code */
-const TOPIC = "jarvis-auth-v1/accounts";
+const ADMIN_EMAILS = ["cyborgv43214@gmail.com", "bywhitley@s.sfusd.edu"];
+const TOPIC = "jarvis-auth-v2/accounts";
 const LS = "jarvis.session";
 const $=s=>document.querySelector(s);
-const gate=$("#gate"), gStatus=$("#g-status"), forms=$("#g-forms"), pendingBox=$("#g-pending"), adminOv=$("#adminOv");
+const gate=$("#gate"), gStatus=$("#g-status"), adminOv=$("#adminOv");
 let accounts={}, got=false, client=null, connected=false;
 
 function msg(t){gStatus.textContent=t;}
@@ -314,31 +305,32 @@ async function hash(s){
 }
 function publish(){if(client&&connected)client.publish(TOPIC,JSON.stringify(accounts),{retain:true});}
 function session(){try{return JSON.parse(localStorage.getItem(LS)||"null")}catch(e){return null}}
+function isAdmin(em){return ADMIN_EMAILS.indexOf((em||"").toLowerCase())>-1}
 
-function grant(user){
-  localStorage.setItem(LS,JSON.stringify({user}));
-  gate.style.display="none";
-  try{if(window.logMsg)logMsg("jarvis","Access granted. Welcome, "+user+".");}catch(e){}
+function enter(email){
+  localStorage.setItem(LS,JSON.stringify({email}));
+  gate.style.display="none"; msg("");
+  if(isAdmin(email)) injectAdmin(); else removeAdmin();
+  try{if(window.logMsg)logMsg("jarvis","Access granted. Welcome, "+email.split("@")[0]+".");}catch(e){}
 }
-function revoke(m){localStorage.removeItem(LS);gate.style.display="flex";if(m)msg(m);}
+function kick(m){localStorage.removeItem(LS);removeAdmin();gate.style.display="flex";if(m)msg(m);}
 
 function refresh(){
-  if(localStorage.getItem("jarvis.master")==="1"){gate.style.display="none";return;}
   const s=session();
-  if(!s){forms.hidden=false;pendingBox.hidden=true;return;}
+  if(!s){gate.style.display="flex";return;}
   if(!got){msg("VERIFYING CLEARANCE…");return;}
-  const a=accounts[s.user];
-  if(!a){revoke("Session not found. Register or login.");return;}
-  if(a.s==="approved"){gate.style.display="none";msg("");}
-  else if(a.s==="pending"){forms.hidden=true;pendingBox.hidden=false;msg("");}
-  else revoke("Access denied by admin.");
+  const a=accounts[s.email];
+  if(!a){kick("Session not found. Sign in or create an account.");return;}
+  if(a.s==="banned"){kick("Account suspended by admin.");return;}
+  gate.style.display="none"; msg("");
+  if(isAdmin(s.email)) injectAdmin(); else removeAdmin();
 }
 
 /* ---- broker ---- */
 const BROKERS=["wss://broker.emqx.io:8084/mqtt","wss://broker.hivemq.com:8884/mqtt"];
 let bi=0;
 function connect(){
-  client=mqtt.connect(BROKERS[bi],{clientId:"jarvis-gate-"+Math.random().toString(16).slice(2,8),connectTimeout:5000,reconnectPeriod:4000});
+  client=mqtt.connect(BROKERS[bi],{clientId:"jarvis-gate2-"+Math.random().toString(16).slice(2,8),connectTimeout:5000,reconnectPeriod:4000});
   client.on("connect",()=>{connected=true;client.subscribe(TOPIC);});
   client.on("message",(t,p)=>{if(t!==TOPIC)return;try{accounts=JSON.parse(p.toString())||{}}catch(e){accounts={}}got=true;refresh();if(!adminOv.hidden)renderAdmin();});
   client.on("error",()=>{if(!connected){bi=(bi+1)%BROKERS.length;try{client.end(true)}catch(e){}connect();}});
@@ -346,55 +338,56 @@ function connect(){
 connect();
 setTimeout(()=>{got=true;refresh();},1800);
 
-/* ---- register / login ---- */
+/* ---- create / sign in ---- */
 $("#g-reg").onclick=async()=>{
-  const u=$("#g-user").value.trim(), p=$("#g-pass").value;
-  if(!/^[a-zA-Z0-9_-]{3,16}$/.test(u)){msg("Callsign: 3–16 letters/numbers.");return;}
+  const em=$("#g-email").value.trim().toLowerCase(), p=$("#g-pass").value;
+  if(!/^[^\s@]+@[^\s@]+\.[^\s@]+$/.test(em)){msg("Enter a valid email address.");return;}
   if(p.length<4){msg("Passcode: at least 4 characters.");return;}
-  if(accounts[u]){msg("Callsign already exists. Login instead.");return;}
-  accounts[u]={h:await hash(u+":"+p),s:"pending",t:Date.now()};
+  if(accounts[em]){msg(accounts[em].s==="banned"?"Account suspended by admin.":"Account exists — use SIGN IN.");return;}
+  accounts[em]={h:await hash(em+":"+p),s:"ok",t:Date.now()};
   publish();
-  localStorage.setItem(LS,JSON.stringify({user:u}));
-  msg("Request sent. Awaiting admin approval.");
-  refresh();
+  enter(em);
 };
 $("#g-login").onclick=async()=>{
-  const u=$("#g-user").value.trim(), p=$("#g-pass").value;
-  const a=accounts[u];
-  if(!a||a.h!==await hash(u+":"+p)){msg("Invalid callsign or passcode.");return;}
-  localStorage.setItem(LS,JSON.stringify({user:u}));
-  refresh();
+  const em=$("#g-email").value.trim().toLowerCase(), p=$("#g-pass").value;
+  const a=accounts[em];
+  if(!a){msg("No account found — create one first.");return;}
+  if(a.s==="banned"){msg("Account suspended by admin.");return;}
+  if(a.h!==await hash(em+":"+p)){msg("Wrong passcode.");return;}
+  enter(em);
 };
 
-/* ---- admin ---- */
-$("#g-admin").onclick=()=>{
-  const c=prompt("Admin code:");
-  if(c===null)return;
-    if(c!==ADMIN_CODE){msg("Wrong admin code.");return;}
-  localStorage.setItem("jarvis.master","1");
-  gate.style.display="none";
-  adminOv.hidden=false;renderAdmin();
-};
+/* ---- admin button (owners only) ---- */
+function injectAdmin(){
+  if($("#admin-btn"))return;
+  const hr=document.querySelector(".hright")||document.querySelector("header");
+  if(!hr)return;
+  const b=document.createElement("button");
+  b.type="button"; b.id="admin-btn"; b.textContent="🛡 ADMIN";
+  b.onclick=()=>{sfxSafe();adminOv.hidden=false;renderAdmin();};
+  const gear=$("#gear");
+  if(gear)hr.insertBefore(b,gear);else hr.appendChild(b);
+}
+function removeAdmin(){const b=$("#admin-btn");if(b)b.remove();adminOv.hidden=true;}
+function sfxSafe(){try{if(window.sfx)sfx(700,.05);}catch(e){}}
 $("#a-close").onclick=()=>{adminOv.hidden=true;};
+
 function mk(t,fn){const b=document.createElement("button");b.className="g-btn small";b.textContent=t;b.onclick=fn;return b;}
 function renderAdmin(){
   const list=$("#a-list");list.innerHTML="";
-  const keys=Object.keys(accounts);
-  if(!keys.length){list.innerHTML='<div class="a-empty">No registrations yet. Share your site URL — new users appear here.</div>';return;}
-  keys.forEach(u=>{
-    const a=accounts[u];
+  const keys=Object.keys(accounts).sort();
+  if(!keys.length){list.innerHTML='<div class="a-empty">No accounts yet.</div>';return;}
+  keys.forEach(em=>{
+    const a=accounts[em];
     const row=document.createElement("div");row.className="a-row";
-    const info=document.createElement("span");info.className="a-info";
-    info.innerHTML="<b>"+u+"</b> — "+a.s;
+    const info=document.createElement("span");
+    info.innerHTML="<b>"+em+"</b> — "+(a.s==="banned"?"SUSPENDED":"ACTIVE");
     row.appendChild(info);
-    if(a.s==="pending"){
-      row.appendChild(mk("APPROVE",()=>{accounts[u].s="approved";publish();renderAdmin();}));
-      row.appendChild(mk("DENY",()=>{accounts[u].s="denied";publish();renderAdmin();}));
+    if(isAdmin(em)){
+      const t=document.createElement("span");t.className="a-empty";t.textContent="OWNER";row.appendChild(t);
     }else{
-      row.appendChild(mk(a.s==="approved"?"REVOKE":"PURGE",()=>{
-        if(a.s==="approved")accounts[u].s="denied";else delete accounts[u];
-        publish();renderAdmin();
-      }));
+      row.appendChild(mk(a.s==="banned"?"UNBAN":"BAN",()=>{a.s=a.s==="banned"?"ok":"banned";publish();renderAdmin();}));
+      row.appendChild(mk("PURGE",()=>{delete accounts[em];publish();renderAdmin();}));
     }
     list.appendChild(row);
   });
@@ -402,7 +395,7 @@ function renderAdmin(){
 refresh();
 })();
 </script>
-<!-- ▲▲ ACCESS CONTROL ▲▲ -->
+<!-- ▲▲ ACCESS CONTROL v2 ▲▲ -->
 
 <canvas id="fx"></canvas>
 <div id="reticle"></div>
