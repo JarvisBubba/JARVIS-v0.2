@@ -57,9 +57,8 @@ button.send:hover{background:rgba(63,210,255,.25);color:#eaffff;box-shadow:0 0 1
 
 <script>
 (function(){
-  var mode = localStorage.getItem("jarvis.mode") || "restricted";
   var s = null; try { s = JSON.parse(localStorage.getItem("jarvis.session") || "null"); } catch (e) {}
-  if (mode !== "open" && !s) location.replace("index.html");
+  if (!s || !s.email) location.replace("index.html");
 })();
 </script>
 const chat = document.getElementById("chat");
