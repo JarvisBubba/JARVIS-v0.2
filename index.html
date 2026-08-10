@@ -997,6 +997,57 @@ try{
 })();
 </script>
 <!-- ▲▲ RADAR GLOW-UP ▲▲ -->
+
+<!-- ▼▼ RADAR MAP LAYER — paste right above </body> ▼▼ -->
+<style>
+.radbase{position:absolute;inset:0;width:100%;height:100%;object-fit:cover;opacity:.55;filter:saturate(.6) brightness(.8) contrast(1.1)}
+.radmark{position:absolute;z-index:3;width:10px;height:10px;margin:-5px;border-radius:50%;background:var(--cyan);box-shadow:0 0 10px var(--cyan)}
+.radmark::after{content:"";position:absolute;inset:-8px;border:1px solid var(--cyan);border-radius:50%;animation:tpulse 1.6s infinite}
+.radtag{position:absolute;z-index:3;transform:translate(10px,-6px);font-family:"Orbitron";font-size:.5rem;letter-spacing:.15em;color:var(--cyan);text-shadow:0 0 6px #000}
+.radattr{position:absolute;bottom:2px;right:6px;z-index:3;font-size:.45rem;color:rgba(207,234,245,.35)}
+</style>
+<script>
+(async function(){
+const $q=s=>document.querySelector(s);
+const old=$q("#radA");const mod=old?old.closest(".module"):null;if(!mod)return;
+mod.innerHTML='<h3>PRECIP RADAR <span>▮</span></h3>'+
+ '<div class="radwrap"><img id="r2base" class="radbase" alt="">'+
+ '<img id="r2A" class="radimg" crossorigin="anonymous"><img id="r2B" class="radimg" crossorigin="anonymous">'+
+ '<div class="radgrid"></div><div class="radsweep"></div><div class="radscan"></div><span class="radlive">● LIVE</span>'+
+ '<span class="radcorner" style="top:4px;left:4px;border-right:0;border-bottom:0"></span><span class="radcorner" style="top:4px;right:4px;border-left:0;border-bottom:0"></span>'+
+ '<span class="radcorner" style="bottom:4px;left:4px;border-right:0;border-top:0"></span><span class="radcorner" style="bottom:4px;right:4px;border-left:0;border-top:0"></span>'+
+ '<span class="radattr">© OSM © CARTO</span></div>'+
+ '<div class="rows"><div><span>SECTOR</span><b id="r2City">--</b></div><div><span>FRAME</span><b id="r2Time">--:--</b></div><div><span>COVERAGE</span><b id="r2Cov">--</b></div></div>';
+const A=$q("#r2A"),B=$q("#r2B");let front=A,back=B;
+const cv=document.createElement("canvas");cv.width=256;cv.height=256;const cx=cv.getContext("2d",{willReadFrequently:true});
+try{
+ const g=await(await fetch("https://ipwho.is/")).json();
+ const lat=g.latitude,lon=g.longitude;
+ $q("#r2City").textContent=(g.city||"UNKNOWN")+", "+(g.country_code||"");
+ const z=6,latR=lat*Math.PI/180;
+ const xf=(lon+180)/360*Math.pow(2,z), yf=(1-Math.log(Math.tan(latR)+1/Math.cos(latR))/Math.PI)/2*Math.pow(2,z);
+ const x=Math.floor(xf), y=Math.floor(yf);
+ $q("#r2base").src="https://basemaps.cartocdn.com/dark_all/"+z+"/"+x+"/"+y+".png";
+ const wrap=mod.querySelector(".radwrap");
+ const mk=document.createElement("span");mk.className="radmark";mk.style.left=((xf-x)*100)+"%";mk.style.top=((yf-y)*100)+"%";wrap.appendChild(mk);
+ const tag=document.createElement("span");tag.className="radtag";tag.style.left=((xf-x)*100)+"%";tag.style.top=((yf-y)*100)+"%";tag.textContent=(g.city||"YOU").toUpperCase();wrap.appendChild(tag);
+ const d=await(await fetch("https://api.rainviewer.com/public/weather-maps.json")).json();
+ const frames=(d.radar.past||[]).slice(-6);if(!frames.length)return;
+ let fi=0;
+ function coverage(img){try{cx.clearRect(0,0,256,256);cx.drawImage(img,0,0,256,256);const px=cx.getImageData(0,0,256,256).data;let hit=0,tot=0;for(let i=3;i<px.length;i+=16){tot++;if(px[i]>40)hit++;}return Math.round(hit/tot*100);}catch(e){return null;}}
+ setInterval(()=>{
+  const f=frames[fi%frames.length];
+  back.src=d.host+f.path+"/256/"+z+"/"+x+"/"+y+"/4/1_1.png";
+  const b2=back;
+  b2.onload=()=>{b2.classList.add("on");front.classList.remove("on");front=b2;back=(b2===A)?B:A;
+   const cov=coverage(b2);const ce=$q("#r2Cov");if(ce)ce.textContent=(cov==null?"--":cov+"%");};
+  const te=$q("#r2Time");if(te){const dt=new Date(f.time*1000);te.textContent=String(dt.getUTCHours()).padStart(2,"0")+":"+String(dt.getUTCMinutes()).padStart(2,"0")+" UTC";}
+  fi++;
+ },900);
+}catch(e){}
+})();
+</script>
+<!-- ▲▲ RADAR MAP LAYER ▲▲ -->
   
 </body>
 </html>
