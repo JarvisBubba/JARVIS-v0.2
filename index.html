@@ -412,5 +412,175 @@ $q(".hright").insertBefore(wakeBtn,humBtn);
 })();
 </script>
 <!-- ▲▲ MARK VIII UPGRADE PACK ▲▲ -->
+
+<!-- ▼▼ MARK IX REALISM PACK — paste right above </body> ▼▼ -->
+<style>
+.rtoast{position:fixed;bottom:26px;left:50%;transform:translateX(-50%) translateY(20px);z-index:300;background:#04101c;border:1px solid var(--cyan);color:#cfeaf5;padding:10px 18px;font-family:"Rajdhani";letter-spacing:.05em;opacity:0;transition:.35s;clip-path:polygon(0 0,calc(100% - 12px) 0,100% 12px,100% 100%,12px 100%,0 calc(100% - 12px))}
+.rtoast.on{opacity:1;transform:translateX(-50%) translateY(0)}.rtoast.ok{border-color:#7dffa8}.rtoast.bad{border-color:#ff5d5d}
+#scanOv{position:fixed;inset:0;z-index:240;background:rgba(2,10,20,.95);display:flex;align-items:center;justify-content:center;flex-direction:column;gap:14px}
+#scanOv[hidden]{display:none}
+#scanOv video{width:min(560px,90vw);border:1px solid var(--cyan);filter:saturate(.4) contrast(1.2)}
+#scanOv .sl{position:absolute;width:min(560px,90vw);height:3px;background:var(--cyan);box-shadow:0 0 18px var(--cyan);animation:tscan 2.4s linear infinite}
+.feed div{font-size:.68rem;line-height:1.5;color:var(--cyan-dim);border-bottom:1px dashed rgba(15,58,92,.6);padding:2px 0}
+.feed b{color:var(--cyan)}
+</style>
+<script>
+(function(){
+const $q=s=>document.querySelector(s);
+/* ---- own toast + cross-tab bus ---- */
+const bus=("BroadcastChannel" in window)?new BroadcastChannel("jarvis-bus"):null;
+function rt(t,ok,noBus){const d=document.createElement("div");d.className="rtoast"+(ok?" ok":" bad");d.textContent=t;document.body.appendChild(d);requestAnimationFrame(()=>d.classList.add("on"));setTimeout(()=>{d.classList.remove("on");setTimeout(()=>d.remove(),400);},2600);if(bus&&!noBus)try{bus.postMessage({t:"rt",x:t,ok:ok});}catch(e){}}
+if(bus)bus.onmessage=e=>{const m=e.data;if(!m)return;if(m.t==="rt")rt(m.x,m.ok,true);if(m.t==="log")try{logMsg("jarvis",m.x);}catch(e2){}};
+
+/* ---- 3) real uplink latency ---- */
+setInterval(async()=>{const t0=performance.now();try{await fetch(location.href,{method:"HEAD",cache:"no-store"});const ms=Math.round(performance.now()-t0);const u=$q("#uplink");if(u)u.textContent=ms+"ms";}catch(e){}},15000);
+
+/* ---- 2) live system events ---- */
+addEventListener("offline",()=>{const u=$q("#uplink");if(u)u.textContent="LOST";rt("⚠ Uplink lost.",false);try{logMsg("jarvis","⚠ Uplink lost, sir. Running on local reserves.");if(bus)bus.postMessage({t:"log",x:"⚠ Uplink lost."});}catch(e){}});
+addEventListener("online",()=>{rt("✔ Uplink restored.",true);try{logMsg("jarvis","Uplink restored. Welcome back to the grid.");}catch(e){}});
+let lastSeen=Date.now(),idleNudged=false;
+document.addEventListener("visibilitychange",()=>{if(!document.hidden&&Date.now()-lastSeen>60000){try{logMsg("jarvis","Welcome back, sir. The reactor missed you.");}catch(e){}}lastSeen=Date.now();idleNudged=false;});
+setInterval(()=>{if(document.hidden)return;if(Date.now()-lastSeen>300000&&!idleNudged){idleNudged=true;try{logMsg("jarvis","Sir, you've been idle for 5 minutes. Shall I assume you're building something in a garage?");}catch(e){}}},30000);
+addEventListener("pointerdown",()=>lastSeen=Date.now());addEventListener("keydown",()=>lastSeen=Date.now());
+if(navigator.getBattery)navigator.getBattery().then(b=>{let warned=false;const chk=()=>{if(b.level<.2&&!b.charging&&!warned){warned=true;rt("🔋 Power reserves at "+Math.round(b.level*100)+"%.",false);try{logMsg("jarvis","⚠ Battery at "+Math.round(b.level*100)+"%. Might I suggest a charger, sir?");}catch(e){}}};b.addEventListener("levelchange",chk);chk();}).catch(()=>{});
+
+/* ---- 4/5/6) real-world modules ---- */
+const aside=document.querySelectorAll(".hud aside")[1]||document.querySelector(".hud aside");
+if(aside){aside.insertAdjacentHTML("beforeend",
+ '<div class="module"><h3>SEISMIC <span>▮</span></h3><div class="feed" id="quake"><div>Scanning tectonic nets…</div></div></div>'+
+ '<div class="module"><h3>GLOBAL INTEL <span>▮</span></h3><div class="feed" id="intel"><div>Intercepting…</div></div></div>'+
+ '<div class="module"><h3>DAILY BRIEFING <span>▮</span></h3><div class="feed" id="brief"><div>Querying repo archives…</div></div></div>');}
+async function quake(){try{const d=await(await fetch("https://earthquake.usgs.gov/earthquakes/feed/v1.0/summary/all_hour.geojson")).json();const f=(d.features||[]).sort((a,b)=>b.properties.mag-a.properties.mag)[0];$q("#quake").innerHTML=f?("<div><b>M"+f.properties.mag+"</b> — "+f.properties.place+"</div>"):("<div>No seismic events this hour. Planet nominal.</div>");}catch(e){}}
+quake();setInterval(quake,60000);
+async function intel(){try{const ids=await(await fetch("https://hacker-news.firebaseio.com/v0/topstories.json")).json();const top=ids.slice(0,4);let html="";for(const id of top){const it=await(await fetch("https://hacker-news.firebaseio.com/v0/item/"+id+".json")).json();html+="<div>▸ "+(it.title||"").replace(/</g,"&lt;")+"</div>";}$q("#intel").innerHTML=html||"<div>Quiet wires tonight.</div>";}catch(e){}}
+intel();setInterval(intel,300000);
+async function brief(){try{const parts=location.pathname.split("/").filter(Boolean);const owner=parts[0]||"";const guesses=[owner+"/jarvis-v0.1",owner+"/"+(parts[1]||""),owner+"/"+owner];for(const repo of guesses){if(!owner)break;const r=await fetch("https://api.github.com/repos/"+repo+"/issues?labels=briefing&state=open&per_page=1");if(!r.ok)continue;const d=await r.json();if(d&&d[0]){$q("#brief").innerHTML="<div><b>"+d[0].title.replace(/</g,"&lt;")+"</b></div><div>"+(d[0].body||"").replace(/</g,"&lt;").slice(0,180)+"…</div>";return;}}$q("#brief").innerHTML="<div>No briefing filed. Run the workflow in jarvis-v0.1.</div>";}catch(e){}}
+brief();
+
+/* ---- 7) streaming replies ---- */
+function streamMsg(t){const L=$q("#log");if(!L)return;const d=document.createElement("div");d.className="msg jarvis";d.innerHTML='<span class="who">'+((window.S&&S.name)||"JARVIS")+'</span><span class="stx"></span>';L.appendChild(d);const el=d.querySelector(".stx");const words=String(t).split(" ");let i=0;(function step(){i+=2;el.textContent=words.slice(0,i).join(" ");L.scrollTop=L.scrollHeight;if(i<words.length)setTimeout(step,70);})();}
+if(typeof logMsg==="function"){const _lm=logMsg;logMsg=function(w,t){if(w==="jarvis"&&typeof t==="string"&&t.length>40&&t.length<500&&!t.includes("<")&&!t.includes("\n-")){streamMsg(t);return;}return _lm(w,t);};}
+
+/* ---- 8) human voice tuning ---- */
+if(typeof speak==="function"&&"speechSynthesis" in window){window.speak=function(text){if(!window.S||S.voice===false)return;const u=new SpeechSynthesisUtterance(String(text).replace(/[🕐📅🧮🎲🪙😏📚⚠✔✘👁📡🎤]/g,""));const vs=speechSynthesis.getVoices();const v=vs.find(x=>/en-GB/i.test(x.lang)&&/male|daniel|george|arthur|uk english male/i.test(x.name))||vs.find(x=>/en-GB/i.test(x.lang))||vs.find(x=>x.lang.startsWith("en"));if(v)u.voice=v;u.rate=.95;u.pitch=.85;const o=$q("#orb"),st=$q("#state");u.onstart=()=>{if(o)o.classList.add("speaking");if(st)st.textContent="SPEAKING";};u.onend=()=>{if(o)o.classList.remove("speaking");if(st)st.textContent="STANDBY";};speechSynthesis.cancel();speechSynthesis.speak(u);};}
+
+/* ---- 1+9) biometric scan + contextual greeting on login ---- */
+async function runScan(){
+ const L=[];L.push("> operator biometric scan…");
+ L.push("CORES: "+(navigator.hardwareConcurrency||"?")+" threads · MEM ~"+(navigator.deviceMemory||"?")+"GB");
+ try{const c=document.createElement("canvas");const gl=c.getContext("webgl");const ex=gl.getExtension("WEBGL_debug_renderer_info");L.push("GPU: "+String(ex?gl.getParameter(ex.UNMASKED_RENDERER_WEBGL):gl.getParameter(gl.RENDERER)).slice(0,48));}catch(e){}
+ L.push("DISPLAY: "+screen.width+"×"+screen.height+" · NET: "+((navigator.connection&&navigator.connection.effectiveType)||"unknown"));
+ let city="";try{const g=await(await fetch("https://ipwho.is/")).json();city=g.city||"";if(city)L.push("LOCATION: "+city+", "+(g.country||""));}catch(e){}
+ let wx="";try{if(city){const g2=await(await fetch("https://geocoding-api.open-meteo.com/v1/search?name="+encodeURIComponent(city)+"&count=1")).json();if(g2.results){const f=await(await fetch("https://api.open-meteo.com/v1/forecast?latitude="+g2.results[0].latitude+"&longitude="+g2.results[0].longitude+"&current=temperature_2m,weather_code")).json();wx=Math.round(f.current.temperature_2m)+"°C outside.";}}}catch(e){}
+ try{logMsg("jarvis",L.join("\n"));}catch(e){}
+ const h=new Date().getHours();const greet=h<5?"Working late":h<12?"Good morning":h<18?"Good afternoon":"Good evening";
+ const sum=greet+", "+((window.S&&S.userName)||"sir")+". "+(wx?wx+" ":"")+"All systems read you clear.";
+ setTimeout(()=>{try{logMsg("jarvis",sum);}catch(e){}try{window.speak&&speak(sum);}catch(e){}},1200);
+}
+let scanned=false;
+new MutationObserver(()=>{const g=$q("#gate");if(g&&g.style.display==="none"&&!scanned){scanned=true;setTimeout(runScan,800);}}).observe($q("#gate"),{attributes:true,attributeFilter:["style"]});
+
+/* ---- 10) gyro tilt on phones ---- */
+function gyro(e){if(e.gamma==null)return;if(matchMedia("(pointer:fine)").matches)return;const o=$q(".orb");if(o)o.style.transform="perspective(750px) rotateY("+Math.max(-14,Math.min(14,e.gamma))+"deg) rotateX("+Math.max(-14,Math.min(14,(e.beta||45)-45))+"deg)";}
+addEventListener("deviceorientation",gyro);
+addEventListener("pointerdown",()=>{try{if(DeviceOrientationEvent&&DeviceOrientationEvent.requestPermission)DeviceOrientationEvent.requestPermission().catch(()=>{});}catch(e){}},{once:true});
+
+/* ---- 11) IDENT SCAN (camera, local only) ---- */
+const scanOv=document.createElement("div");scanOv.id="scanOv";scanOv.hidden=true;
+scanOv.innerHTML='<video autoplay playsinline muted></video><div class="sl"></div><div class="g-row"><button id="scan-x" class="g-btn">CLOSE</button></div>';
+document.body.appendChild(scanOv);
+const camBtn=document.createElement("button");camBtn.type="button";camBtn.textContent="📷 SCAN";
+camBtn.onclick=async()=>{scanOv.hidden=false;try{const st=await navigator.mediaDevices.getUserMedia({video:true});scanOv.querySelector("video").srcObject=st;setTimeout(()=>{rt("🧬 RETINAL PATTERN: UNIQUE · MATCH 99.2%",true);},2400);scanOv._st=st;}catch(e){rt("Camera denied.",false);scanOv.hidden=true;}};
+$q("#scan-x").onclick=()=>{try{scanOv._st&&scanOv._st.getTracks().forEach(t=>t.stop());}catch(e){}scanOv.hidden=true;};
+$q(".hright").insertBefore(camBtn,$q("#target-btn"));
+
+/* ---- 👁 SCREEN UPLINK (vision across tabs) ---- */
+let shareV=null,sharing=false;
+const eyeBtn=document.createElement("button");eyeBtn.type="button";eyeBtn.textContent="👁 SHARE";
+eyeBtn.onclick=()=>{sharing?stopShare():startShare();};
+$q(".hright").insertBefore(eyeBtn,camBtn);
+async function startShare(){try{const st=await navigator.mediaDevices.getDisplayMedia({video:true});shareV=document.createElement("video");shareV.srcObject=st;shareV.muted=true;shareV.play();st.getVideoTracks()[0].addEventListener("ended",stopShare);sharing=true;eyeBtn.textContent="👁 LIVE";eyeBtn.style.borderColor="#7dffa8";eyeBtn.style.color="#7dffa8";addVisionChips();rt("👁 Screen uplink live — JARVIS can see your other tabs now.",true);}catch(e){rt("Screen share cancelled.",false);}}
+function stopShare(){try{shareV&&shareV.srcObject&&shareV.srcObject.getTracks().forEach(t=>t.stop());}catch(e){}sharing=false;shareV=null;eyeBtn.textContent="👁 SHARE";eyeBtn.style.borderColor="";eyeBtn.style.color="";document.querySelectorAll(".chip.vc").forEach(c=>c.remove());}
+function addVisionChips(){const box=$q("#chips");if(!box)return;const a=document.createElement("button");a.type="button";a.className="chip vc";a.textContent="🔍 analyze screen";a.onclick=analyze;a.style.borderColor="#7dffa8";a.style.color="#7dffa8";const b=document.createElement("button");b.type="button";b.className="chip vc";b.textContent="👁 stop share";b.onclick=stopShare;box.appendChild(a);box.appendChild(b);}
+function grab(){if(!shareV||shareV.readyState<2)return null;const c=document.createElement("canvas");const w=640,h=Math.max(1,Math.round(640*(shareV.videoHeight||360)/(shareV.videoWidth||640)));c.width=w;c.height=h;c.getContext("2d").drawImage(shareV,0,0,w,h);return c.toDataURL("image/png").split(",")[1];}
+async function analyze(){if(!sharing){rt("Start 👁 SHARE first.",false);return;}const key=window.S&&S.geminiKey;if(!key){rt("Vision needs a Gemini key (⚙ SETTINGS).",false);return;}const frame=grab();if(!frame){rt("No frame yet.",false);return;}rt("🔍 Analyzing screen…",true);try{const r=await fetch("https://generativelanguage.googleapis.com/v1beta/models/gemini-2.0-flash:generateContent?key="+key,{method:"POST",headers:{"Content-Type":"application/json"},body:JSON.stringify({contents:[{parts:[{text:"You are JARVIS, dry-witted butler AI. In under 60 words, describe what the user is doing on this screen and offer one useful remark."},{inline_data:{mime_type:"image/png",data:frame}}]}]})});if(!r.ok)throw 0;const d=await r.json();const txt=d.candidates&&d.candidates[0]&&d.candidates[0].content.parts[0].text;try{logMsg("jarvis","👁 "+txt);}catch(e){}try{window.speak&&speak(txt);}catch(e){}}catch(e){rt("Vision uplink failed.",false);}}
+})();
+</script>
+<!-- ▲▲ MARK IX REALISM PACK ▲▲ -->
+
+<!-- ▼▼ MARK X COMMAND DECK — paste right above </body> ▼▼ -->
+<style>
+#cmd-btn{border-color:var(--amber);color:var(--amber);background:rgba(255,181,77,.08)}
+#cmdOv{position:fixed;inset:0;z-index:190;background:rgba(2,10,20,.9);display:flex;justify-content:flex-start;padding:70px 20px 20px}
+#cmdOv[hidden]{display:none}
+.cmd-sheet{width:600px;max-width:100%;max-height:100%;overflow-y:auto;background:rgba(4,22,38,.95);border:1px solid var(--line);padding:20px;clip-path:polygon(0 0,calc(100% - 18px) 0,100% 18px,100% 100%,18px 100%,0 calc(100% - 18px))}
+.cmd-sheet h1{font-family:"Orbitron";font-size:.9rem;letter-spacing:.3em;color:var(--cyan);margin-bottom:6px}
+.cmd-note{font-size:.8rem;color:var(--cyan-dim);margin-bottom:14px;line-height:1.5}
+.cmd-sec{font-family:"Orbitron";font-size:.6rem;letter-spacing:.3em;color:var(--amber);margin:14px 0 8px;border-bottom:1px solid var(--line);padding-bottom:5px}
+.cmd-row{display:flex;gap:12px;padding:5px 0;border-bottom:1px dashed rgba(15,58,92,.5);font-size:.9rem}
+.cmd-say{flex:0 0 210px;color:var(--cyan)}
+.cmd-desc{color:var(--cyan-dim)}
+</style>
+<script>
+(function(){
+const $q=s=>document.querySelector(s);
+const hbtns=()=>[...document.querySelectorAll("header button")];
+function clickBtn(t){const b=hbtns().find(x=>x.textContent.includes(t));if(b){b.click();return true;}return false;}
+function clickChip(t){const b=[...document.querySelectorAll(".chip")].find(x=>x.textContent.includes(t));if(b){b.click();return true;}return false;}
+const humOn=()=>{const b=hbtns().find(x=>x.textContent.includes("HUM"));return !!(b&&b.textContent.includes("🔊"));};
+const shareOn=()=>{const b=hbtns().find(x=>x.textContent.includes("SHARE")||x.textContent.includes("LIVE"));return !!(b&&b.textContent.includes("LIVE"));};
+const wakeOn=()=>{const b=hbtns().find(x=>x.textContent.includes("WAKE"));return !!(b&&b.style.color);};
+function readMod(sel,label){const el=$q(sel);const t=el?el.textContent.replace(/\s+/g," ").trim():"No data yet, sir.";try{logMsg("jarvis",label+": "+t);}catch(e){}try{window.speak&&speak(label+". "+t.slice(0,220));}catch(e){}return null;}
+
+const REG=[
+ {sec:"SUIT SYSTEMS",say:["disengage targeting","stop targeting"],hide:1,run:()=>{setTarget(false);return "Targeting disengaged.";}},
+ {sec:"SUIT SYSTEMS",say:["engage targeting","start targeting","targeting mode"],label:"engage / disengage targeting",desc:"Targeting mode + target practice",run:()=>{setTarget(true);return "Targeting engaged. Targets inbound.";}},
+ {sec:"SUIT SYSTEMS",say:["surge the reactor","reactor surge","overcharge"],label:"surge the reactor",desc:"Overcharge the arc core",run:()=>{$q(".orb").click();return null;}},
+ {sec:"SUIT SYSTEMS",say:["ident scan","scan me","biometric scan"],label:"ident scan",desc:"Camera biometric scan (stays on your device)",run:()=>{clickBtn("SCAN");return "Ident scan initiated. Hold still, sir.";}},
+ {sec:"SUIT SYSTEMS",say:["stop screen share","end screen share"],hide:1,run:()=>{if(shareOn())clickBtn("LIVE");return "Screen uplink closed.";}},
+ {sec:"SUIT SYSTEMS",say:["start screen share","share my screen","screen share"],label:"start / stop screen share",desc:"Let JARVIS watch a tab or screen",run:()=>{if(shareOn()){clickBtn("LIVE");return "Screen uplink closed.";}clickBtn("SHARE");return "Pick a screen or tab, sir.";}},
+ {sec:"SUIT SYSTEMS",say:["analyze screen","what am i doing","look at my screen"],label:"analyze screen",desc:"JARVIS comments on your screen (needs Gemini key)",run:()=>{clickChip("analyze");return null;}},
+ {sec:"SUIT SYSTEMS",say:["hum off"],hide:1,run:()=>{if(humOn())clickBtn("HUM");return "Hum silenced.";}},
+ {sec:"SUIT SYSTEMS",say:["hum on","reactor hum"],label:"hum on / off",desc:"Reactor ambient hum",run:()=>{if(!humOn())clickBtn("HUM");return "Hum engaged.";}},
+ {sec:"SUIT SYSTEMS",say:["wake word off"],hide:1,run:()=>{if(wakeOn())clickBtn("WAKE");return "Wake word disarmed.";}},
+ {sec:"SUIT SYSTEMS",say:["wake word on","wake word"],label:"wake word on / off",desc:"Arm hands-free 'Hey JARVIS'",run:()=>{if(!wakeOn())clickBtn("WAKE");return "Wake word armed. Say 'Hey JARVIS'.";}},
+ {sec:"SUIT SYSTEMS",say:["show my id","id card","clearance card"],label:"show my id card",desc:"Stark clearance card",run:()=>{clickBtn("ID");return null;}},
+ {sec:"INTEL & SITE",say:["read the briefing","briefing"],label:"read the briefing",desc:"Speak today's repo briefing",run:()=>readMod("#brief","Briefing")},
+ {sec:"INTEL & SITE",say:["any earthquakes","seismic","earthquake report"],label:"any earthquakes",desc:"Live seismic report",run:()=>readMod("#quake","Seismic report")},
+ {sec:"INTEL & SITE",say:["top headlines","intel feed","headlines"],label:"top headlines",desc:"Global intel headlines",run:()=>readMod("#intel","Intel feed")},
+ {sec:"INTEL & SITE",say:["uplink status","ping status"],label:"uplink status",desc:"Latency + systems report",run:()=>{const u=$q("#uplink");return "Uplink at "+(u?u.textContent:"--")+". Core online, wit at 100%.";}},
+ {sec:"INTEL & SITE",say:["open people chat","people chat","open chat","comms channel"],label:"open people chat",desc:"Go to the comms channel",run:()=>{location.href="chat.html";return "Opening comms.";}},
+ {sec:"INTEL & SITE",say:["hide commands","close commands"],hide:1,run:()=>{ov.hidden=true;return null;}},
+ {sec:"INTEL & SITE",say:["show commands","command list","all commands","commands"],label:"show commands",desc:"Open this command deck",run:()=>{ov.hidden=false;return "Full manifest on screen, sir.";}},
+];
+const CORE=[
+ ["help","Protocol manifest"],["time / date","Current time & date"],["weather in <city>","Live weather anywhere"],
+ ["wiki <topic> / who is…","Wikipedia summary"],["calc <math>","Calculations, e.g. calc 2^16"],["joke / quote","Amusement routines"],
+ ["flip a coin / roll 2d6","Probability engine"],["note <text> / notes / clear notes","Memory pad"],["remind me to <x> at <hh:mm>","Spoken reminders"],
+ ["open <site> / search <x>","Launch sites / Google search"],
+];
+function match(t){const low=String(t).toLowerCase();for(const e of REG){for(const p of e.say){if(low.includes(p))return e;}}return null;}
+if(typeof route==="function"){const _r=route;route=async function(t){const e=match(t);if(e)return e.run(t);return _r(t);};}
+
+/* top-left button */
+const header=$q("header");
+const cmdBtn=document.createElement("button");cmdBtn.type="button";cmdBtn.id="cmd-btn";cmdBtn.textContent="≡ COMMANDS";
+header.insertBefore(cmdBtn,header.firstChild);
+
+/* panel */
+const ov=document.createElement("div");ov.id="cmdOv";ov.hidden=true;
+let html='<div class="cmd-sheet"><h1>COMMAND DECK</h1><div class="cmd-note">Say these with 🎤 MIC or the wake word, or type them in the console. Voice understands natural phrasing.<br>…plus a few <b>classified protocols</b>, sir. You know the ones.</div>';
+html+='<div class="cmd-sec">CORE PROTOCOLS</div>';
+for(const [s,d] of CORE)html+='<div class="cmd-row"><span class="cmd-say">'+s+'</span><span class="cmd-desc">'+d+'</span></div>';
+let cur="";
+for(const e of REG){if(e.hide)continue;if(e.sec!==cur){cur=e.sec;html+='<div class="cmd-sec">'+cur+'</div>';}html+='<div class="cmd-row"><span class="cmd-say">'+(e.label||e.say[0])+'</span><span class="cmd-desc">'+(e.desc||"")+'</span></div>';}
+html+='</div>';
+ov.innerHTML=html;document.body.appendChild(ov);
+cmdBtn.onclick=()=>{ov.hidden=!ov.hidden;};
+ov.addEventListener("click",e=>{if(e.target===ov)ov.hidden=true;});
+})();
+</script>
+<!-- ▲▲ MARK X COMMAND DECK ▲▲ -->
+  
 </body>
 </html>
