@@ -948,6 +948,55 @@ if(!localStorage.getItem("jarvis.cleanhint")){localStorage.setItem("jarvis.clean
 })();
 </script>
 <!-- ▲▲ VOICE RESTORE ▲▲ -->
+
+<!-- ▼▼ RADAR GLOW-UP — paste right above </body> ▼▼ -->
+<style>
+.radwrap{position:relative;aspect-ratio:1;border:1px solid var(--line);background:#04101c;overflow:hidden;
+ clip-path:polygon(0 0,calc(100% - 12px) 0,100% 12px,100% 100%,12px 100%,0 calc(100% - 12px))}
+.radimg{position:absolute;inset:0;width:100%;height:100%;object-fit:cover;opacity:0;transition:opacity .45s;image-rendering:pixelated;filter:saturate(1.3) brightness(1.15)}
+.radimg.on{opacity:.92}
+.radscan{position:absolute;left:0;right:0;height:2px;background:linear-gradient(90deg,transparent,rgba(63,210,255,.7),transparent);animation:tscan 3s linear infinite;mix-blend-mode:screen}
+.radsweep{position:absolute;inset:0;background:conic-gradient(from 0deg,rgba(63,210,255,.22),transparent 70deg);animation:spin 5s linear infinite;mix-blend-mode:screen;opacity:.5}
+.radgrid{position:absolute;inset:0;background:linear-gradient(rgba(63,210,255,.12) 1px,transparent 1px),linear-gradient(90deg,rgba(63,210,255,.12) 1px,transparent 1px);background-size:25% 25%;pointer-events:none}
+.radlive{position:absolute;top:6px;right:8px;font-family:"Orbitron";font-size:.5rem;letter-spacing:.2em;color:#7dffa8;animation:blink 1.6s infinite;z-index:2}
+.radcorner{position:absolute;width:14px;height:14px;border:2px solid rgba(63,210,255,.8);z-index:2}
+</style>
+<script>
+(async function(){
+const $q=s=>document.querySelector(s);
+const old=$q("#radarImg");const mod=old?old.closest(".module"):null;if(!mod)return;
+mod.innerHTML='<h3>PRECIP RADAR <span>▮</span></h3>'+
+ '<div class="radwrap"><img id="radA" class="radimg" crossorigin="anonymous"><img id="radB" class="radimg" crossorigin="anonymous">'+
+ '<div class="radgrid"></div><div class="radsweep"></div><div class="radscan"></div><span class="radlive">● LIVE</span>'+
+ '<span class="radcorner" style="top:4px;left:4px;border-right:0;border-bottom:0"></span><span class="radcorner" style="top:4px;right:4px;border-left:0;border-bottom:0"></span>'+
+ '<span class="radcorner" style="bottom:4px;left:4px;border-right:0;border-top:0"></span><span class="radcorner" style="bottom:4px;right:4px;border-left:0;border-top:0"></span></div>'+
+ '<div class="rows"><div><span>FRAME</span><b id="radTime">--:--</b></div><div><span>COVERAGE</span><b id="radCov">--</b></div><div><span>LOOP</span><b id="radN2">--</b></div></div>';
+const A=$q("#radA"),B=$q("#radB");let front=A,back=B;
+const cv=document.createElement("canvas");cv.width=256;cv.height=256;const cx=cv.getContext("2d",{willReadFrequently:true});
+try{
+ const d=await(await fetch("https://api.rainviewer.com/public/weather-maps.json")).json();
+ const frames=(d.radar.past||[]).slice(-6);if(!frames.length)return;
+ const lat=window.__lat||40,lon=window.__lon||-74,z=4,latR=lat*Math.PI/180;
+ const x=Math.floor((lon+180)/360*Math.pow(2,z));
+ const y=Math.floor((1-Math.log(Math.tan(latR)+1/Math.cos(latR))/Math.PI)/2*Math.pow(2,z));
+ let fi=0;
+ function coverage(img){try{cx.clearRect(0,0,256,256);cx.drawImage(img,0,0,256,256);const px=cx.getImageData(0,0,256,256).data;let hit=0,tot=0;
+   for(let i=3;i<px.length;i+=16){tot++;if(px[i]>40)hit++;}return Math.round(hit/tot*100);}catch(e){return null;}}
+ setInterval(()=>{
+   const f=frames[fi%frames.length];
+   const src=d.host+f.path+"/256/"+z+"/"+x+"/"+y+"/4/1_1.png";
+   back.src=src;
+   const b2=back;
+   b2.onload=()=>{b2.classList.add("on");front.classList.remove("on");front=b2;back=(b2===A)?B:A;
+     const cov=coverage(b2);const ce=$q("#radCov");if(ce)ce.textContent=(cov==null?"--":cov+"%");};
+   const te=$q("#radTime");if(te){const dt=new Date(f.time*1000);te.textContent=String(dt.getUTCHours()).padStart(2,"0")+":"+String(dt.getUTCMinutes()).padStart(2,"0")+" UTC";}
+   const ne=$q("#radN2");if(ne)ne.textContent=(fi%frames.length+1)+"/"+frames.length+" · ‑"+Math.round((Date.now()/1000-f.time)/60)+"m";
+   fi++;
+ },900);
+}catch(e){}
+})();
+</script>
+<!-- ▲▲ RADAR GLOW-UP ▲▲ -->
   
 </body>
 </html>
