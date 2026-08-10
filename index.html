@@ -1151,6 +1151,149 @@ if(typeof route==="function"){const _r=route;route=async function(t){const low=S
 })();
 </script>
 <!-- ▲▲ MARK XIV-A ▲▲ -->
+
+<!-- ▼▼ MARK XV MULTI-DECK — paste right above </body> ▼▼ -->
+<style>
+.deck-tabs{display:flex;gap:8px;flex-wrap:wrap;margin-bottom:10px}
+.deck-tabs button{font-family:"Orbitron";font-size:.55rem;letter-spacing:.2em;padding:6px 12px;border:1px solid var(--line);background:transparent;color:var(--cyan-dim);cursor:pointer}
+.deck-tabs button.on{border-color:var(--cyan);color:var(--cyan);background:rgba(63,210,255,.08);box-shadow:0 0 10px rgba(63,210,255,.25)}
+.deck-view{display:none;min-height:340px}.deck-view.on{display:block}
+#schSvg{width:100%;height:340px}
+#schSvg .part{stroke:var(--cyan);fill:none;stroke-width:1.5;cursor:pointer;filter:drop-shadow(0 0 4px rgba(63,210,255,.4))}
+#schSvg .part:hover{stroke:var(--amber)}
+#schSvg text{fill:var(--cyan-dim);font-family:Orbitron;font-size:7px;letter-spacing:.15em}
+#schSvg line.cl{stroke:var(--cyan-dim);stroke-width:.5;stroke-dasharray:3 3}
+.worldwrap{position:relative;height:340px;border:1px solid var(--line);overflow:hidden;background:#04101c}
+.worldwrap img{position:absolute;width:50%;height:50%;object-fit:cover;opacity:.5;filter:saturate(.5) brightness(.75)}
+.wm{position:absolute;z-index:2;transform:translate(-50%,-50%);font-size:.5rem;font-family:Orbitron;letter-spacing:.1em;text-align:center}
+.wm i{display:block;width:8px;height:8px;border-radius:50%;margin:0 auto 2px;box-shadow:0 0 8px currentColor}
+.math-chips{display:flex;gap:8px;flex-wrap:wrap;margin-bottom:10px}
+.math-chips button{font-family:"Orbitron";font-size:.52rem;letter-spacing:.15em;padding:5px 10px;border:1px solid var(--line);background:transparent;color:var(--cyan-dim);cursor:pointer}
+.math-chips button.on{border-color:var(--amber);color:var(--amber)}
+#mathBoard{background:#04101c;border:1px solid var(--line);padding:12px;min-height:200px;max-height:250px;overflow-y:auto;font-size:.9rem;line-height:1.65;white-space:pre-wrap}
+#mathBoard .mh{color:var(--amber);font-family:Orbitron;font-size:.6rem;letter-spacing:.2em}
+#mathBoard .ms{color:#7dffa8}
+#mathIn{width:100%;margin-top:10px;background:#04101c;border:1px solid var(--line);color:var(--text);padding:10px;font-family:Rajdhani;font-size:1rem;outline:none}
+#rfx{height:200px;border:1px solid var(--line);background:#04101c;display:flex;align-items:center;justify-content:center;font-family:Orbitron;letter-spacing:.2em;color:var(--cyan-dim);cursor:pointer;user-select:none;margin-top:10px}
+#rfx.go{background:#0f3a1c;color:#7dffa8;border-color:#7dffa8}
+#wvC{width:100%;height:340px}
+</style>
+<script>
+(function(){
+const $q=s=>document.querySelector(s);
+function rt(t,ok){const d=document.createElement("div");d.className="rtoast"+(ok?" ok":" bad");d.textContent=t;document.body.appendChild(d);requestAnimationFrame(()=>d.classList.add("on"));setTimeout(()=>{d.classList.remove("on");setTimeout(()=>d.remove(),400);},2600);}
+
+/* ================= build deck ================= */
+const deck=document.createElement("div");deck.className="module deck";
+deck.innerHTML='<h3>MULTI-DECK <span>▮</span></h3>'+
+'<div class="deck-tabs"><button data-d="schem">SCHEMATIC</button><button data-d="world">WORLD</button><button data-d="table">TABLE</button><button data-d="wave">WAVE</button><button data-d="math">MATH</button></div>'+
+'<div class="deck-view" id="dv-schem"><svg id="schSvg" viewBox="0 0 400 340">'+
+'<circle class="part" data-p="head" cx="200" cy="42" r="17"/>'+
+'<polygon class="part" data-p="chest" points="183,62 217,62 230,145 170,145"/>'+
+'<circle class="part" data-p="gpu" cx="200" cy="98" r="9"/>'+
+'<polyline class="part" data-p="arm" points="183,66 148,105 138,158"/><polyline class="part" data-p="arm" points="217,66 252,105 262,158"/>'+
+'<polyline class="part" data-p="leg" points="188,145 182,225 179,305"/><polyline class="part" data-p="leg" points="212,145 218,225 221,305"/>'+
+'<line class="cl" x1="217" y1="42" x2="300" y2="30"/><text x="304" y="32" id="sch-head">NEURAL CORES: --</text>'+
+'<line class="cl" x1="209" y1="98" x2="300" y2="98"/><text x="304" y="100" id="sch-gpu">TARGETING CPU: --</text>'+
+'<line class="cl" x1="170" y1="120" x2="100" y2="120"/><text x="10" y="122" id="sch-pwr">POWER CELL: --</text>'+
+'<line class="cl" x1="218" y1="225" x2="300" y2="225"/><text x="304" y="227" id="sch-up">UPLINK: --</text>'+
+'</svg></div>'+
+'<div class="deck-view" id="dv-world"><div class="worldwrap" id="wwrap"></div></div>'+
+'<div class="deck-view" id="dv-table"><div class="g-row"><button class="g-btn small tb" data-g="g-hm">MAINFRAME</button><button class="g-btn small tb" data-g="g-c4">CONNECT-4</button><button class="g-btn small tb" data-g="g-ty">TYPING</button><button class="g-btn small tb" data-g="g-sk">SKETCH</button></div><div id="rfx">REPULSOR REFLEX — CLICK TO ARM</div><div class="rows" style="margin-top:8px"><div><span>GLOBAL BEST</span><b id="rfxLb">--</b></div></div></div>'+
+'<div class="deck-view" id="dv-wave"><canvas id="wvC"></canvas></div>'+
+'<div class="deck-view" id="dv-math"><div class="math-chips" id="mchips"></div><div id="mathBoard"></div><input id="mathIn" placeholder="Ask the board: 2x+5=13 · derivative of 3x^3 · integrate x^2 · explain quadratics"></div>';
+const cons=$q(".console");if(cons)cons.insertAdjacentElement("afterend",deck);
+
+function setDeck(id){document.querySelectorAll(".deck-tabs button").forEach(b=>b.classList.toggle("on",b.dataset.d===id));document.querySelectorAll(".deck-view").forEach(v=>v.classList.toggle("on",v.id==="dv-"+id));}
+deck.querySelector(".deck-tabs").addEventListener("click",e=>{if(e.target.dataset.d)setDeck(e.target.dataset.d);});
+setDeck("schem");
+
+/* ================= SCHEMATIC ================= */
+const PARTS={head:()=> "NEURAL CORES: "+(navigator.hardwareConcurrency||"?")+" threads. Thinking at full capacity.",
+ chest:()=> "POWER CELL: "+pwrTxt+". Charge within acceptable limits.",
+ gpu:()=> "TARGETING CPU: "+gpuTxt+".",
+ arm:()=> "MANIPULATORS: input devices responsive. Do try not to fidget.",
+ leg:()=> "LOCOMOTION: "+((navigator.connection&&navigator.connection.effectiveType)||"unknown")+" class uplink. Steady."};
+let pwrTxt="100% (mains)",gpuTxt="--";
+try{const c=document.createElement("canvas");const gl=c.getContext("webgl");const ex=gl.getExtension("WEBGL_debug_renderer_info");gpuTxt=String(ex?gl.getParameter(ex.UNMASKED_RENDERER_WEBGL):gl.getParameter(gl.RENDERER)).slice(0,26);}catch(e){}
+if(navigator.getBattery)navigator.getBattery().then(b=>{pwrTxt=Math.round(b.level*100)+"%"+(b.charging?" charging":"");const el=$q("#sch-pwr");if(el)el.textContent="POWER CELL: "+pwrTxt;}).catch(()=>{});
+setTimeout(()=>{const h=$q("#sch-head");if(h)h.textContent="NEURAL CORES: "+(navigator.hardwareConcurrency||"?");const g=$q("#sch-gpu");if(g)g.textContent="TARGETING CPU: "+gpuTxt.slice(0,18);const p=$q("#sch-pwr");if(p)p.textContent="POWER CELL: "+pwrTxt;const u=$q("#sch-up");if(u)u.textContent="UPLINK: "+(($q("#uplink")||{}).textContent||"--");},1500);
+$q("#schSvg").addEventListener("click",e=>{const p=e.target.closest(".part");if(!p)return;const fn=PARTS[p.dataset.p];if(fn){const t=fn();try{logMsg("jarvis",t);speak(t);}catch(e2){}}});
+
+/* ================= WORLD ================= */
+const ww=$q("#wwrap");
+for(let y=0;y<2;y++)for(let x=0;x<2;x++){const im=document.createElement("img");im.src="https://basemaps.cartocdn.com/dark_all/2/"+x+"/"+y+".png";im.style.left=x*50+"%";im.style.top=y*50+"%";ww.appendChild(im);}
+function wpos(lat,lon){const latR=lat*Math.PI/180;return{x:(lon+180)/360*100,y:(1-Math.log(Math.tan(latR)+1/Math.cos(latR))/Math.PI)/2*100};}
+function wmark(lat,lon,col,lab){const p=wpos(lat,lon);const d=document.createElement("span");d.className="wm";d.style.left=p.x+"%";d.style.top=p.y+"%";d.style.color=col;d.innerHTML='<i style="background:'+col+'"></i>'+lab;ww.appendChild(d);}
+if(window.__lat!=null)wmark(window.__lat,window.__lon,"#3fd2ff","YOU");
+setInterval(async()=>{try{const d=await(await fetch("https://api.wheretheiss.at/v1/satellites/25544")).json();const old=$q(".wm-iss");if(old)old.remove();const p=wpos(d.latitude,d.longitude);const s=document.createElement("span");s.className="wm wm-iss";s.style.left=p.x+"%";s.style.top=p.y+"%";s.style.color="#ffb54d";s.innerHTML='<i style="background:#ffb54d"></i>ISS';ww.appendChild(s);}catch(e){}},5000);
+(async()=>{try{const d=await(await fetch("https://earthquake.usgs.gov/earthquakes/feed/v1.0/summary/all_hour.geojson")).json();const f=(d.features||[]).sort((a,b)=>b.properties.mag-a.properties.mag)[0];if(f)wmark(f.geometry.coordinates[1],f.geometry.coordinates[0],"#ff5d5d","M"+f.properties.mag);}catch(e){}
+try{const d=await(await fetch("https://ll.thespacedevs.com/2.2.0/launch/upcoming/?limit=1")).json();const L=d.results&&d.results[0];if(L&&L.pad&&L.pad.location&&L.pad.location.latitude)wmark(+L.pad.location.latitude,+L.pad.location.longitude,"#7dffa8","PAD");}catch(e){}})();
+
+/* ================= TABLE (games hub + reflex) ================= */
+deck.addEventListener("click",e=>{const g=e.target.closest(".tb");if(g){const card=document.getElementById(g.dataset.g);if(card)card.click();}});
+let rfxState="idle",rfxT=0,rfxTo=null,rfxBest={};
+const rfxEl=$q("#rfx");
+if(window.mqtt){const rc=mqtt.connect("wss://broker.emqx.io:8084/mqtt",{clientId:"jarvis-r-"+Math.random().toString(16).slice(2,8)});rc.on("connect",()=>rc.subscribe("jarvis-v4/rfx"));rc.on("message",(t,p)=>{try{rfxBest=JSON.parse(p.toString())||{};rfxLb();}catch(e){}});window.__rfxPub=s=>rc.publish("jarvis-v4/rfx",JSON.stringify(s),{retain:true});window.__rfx=rc;}
+function rfxLb(){const top=Object.entries(rfxBest).sort((a,b)=>a[1]-b[1]).slice(0,3);$q("#rfxLb").textContent=top.length?top.map(x=>x[0]+" "+x[1]+"ms").join(" · "):"--";}
+rfxLb();
+rfxEl.onclick=()=>{
+ if(rfxState==="idle"){rfxState="wait";rfxEl.textContent="WAIT FOR GREEN…";rfxEl.classList.remove("go");rfxTo=setTimeout(()=>{rfxState="go";rfxT=Date.now();rfxEl.classList.add("go");rfxEl.textContent="CLICK!";},1000+Math.random()*2200);}
+ else if(rfxState==="wait"){clearTimeout(rfxTo);rfxState="idle";rfxEl.textContent="TOO SOON, SIR. Click to re-arm.";}
+ else if(rfxState==="go"){const ms=Date.now()-rfxT;rfxState="idle";rfxEl.classList.remove("go");rfxEl.textContent=ms+"ms — click to re-arm";const me=(window.jarvis&&"")|| (JSON.parse(localStorage.getItem("jarvis.session")||"{}").email||"guest").split("@")[0];rfxBest[me]=Math.min(rfxBest[me]||1e9,ms);if(window.__rfxPub)window.__rfxPub(rfxBest);rfxLb();try{sfx(1500,.06);}catch(e){}}};
+
+/* ================= WAVE (radial) ================= */
+const wv=$q("#wvC"),wz=wv.getContext("2d");const WB=new Array(72).fill(0);
+(function wvLoop(){const w=wv.width=wv.clientWidth||600,h=wv.height=wv.clientHeight||340;wz.clearRect(0,0,w,h);
+ const o=$q(".orb");const tgt=o&&o.classList.contains("speaking")?1:o&&o.classList.contains("listening")?.6:o&&o.classList.contains("alarm")?.8:.15;
+ const col=document.body.classList.contains("stark")?"255,194,77":"63,210,255";
+ const cx=w/2,cy=h/2,R=Math.min(w,h)/2-40;
+ for(let i=0;i<72;i++){WB[i]+= (tgt*(0.25+Math.random()*0.75)-WB[i])*.3;const a=i/72*Math.PI*2;const len=8+WB[i]*46;
+  wz.strokeStyle=`rgba(${col},${0.3+WB[i]*0.7})`;wz.lineWidth=3;wz.beginPath();wz.moveTo(cx+Math.cos(a)*R,cy+Math.sin(a)*R);wz.lineTo(cx+Math.cos(a)*(R+len),cy+Math.sin(a)*(R+len));wz.stroke();}
+ wz.strokeStyle=`rgba(${col},.5)`;wz.beginPath();wz.arc(cx,cy,R-6,0,7);wz.stroke();
+ requestAnimationFrame(wvLoop);})();
+
+/* ================= MATH BOARD ================= */
+const LIB={
+"ALGEBRA 1":["Slope: m = (y2-y1)/(x2-x1); line: y = mx + b","Solve linear: do the same to both sides, isolate x","FOIL: (a+b)(c+d) = ac+ad+bc+bd","Quadratic formula: x = (-b ± sqrt(b^2-4ac)) / 2a","Systems: substitution or elimination","Inequalities: FLIP the sign when ×/÷ by a negative"],
+"ALGEBRA 2":["Factor x^2+bx+c into (x+p)(x+q) where p+q=b, pq=c","i^2 = -1; complex numbers a+bi","x^a · x^b = x^(a+b); (x^a)^b = x^(ab)","log_b(x)=y  <=>  b^y = x;  ln = log_e","Vertex form: y = a(x-h)^2 + k","(f∘g)(x) = f(g(x))"],
+"CALCULUS":["Limits: behavior as x approaches a","Power rule: d/dx x^n = n·x^(n-1)","Product: (fg)' = f'g + fg'   Chain: (f(g))' = f'(g)·g'","∫ x^n dx = x^(n+1)/(n+1) + C","Fundamental Thm: ∫[a,b] f = F(b) - F(a)","d/dx sin = cos;  d/dx e^x = e^x"],
+"GEOMETRY":["Pythagoras: a^2 + b^2 = c^2","Circle: A = πr^2, C = 2πr","Triangle angles sum to 180°","Area of triangle = ½·b·h","Similar triangles: equal ratios"],
+"TRIG":["SOH-CAH-TOA","sin^2 + cos^2 = 1","Unit circle point = (cosθ, sinθ)","Law of Cosines: c^2 = a^2+b^2-2ab·cosC","tan = sin/cos"],
+"STATISTICS":["mean = Σx/n; median = middle; mode = most","range = max - min","P(event) = favorable / total","z-score = (x - μ)/σ","Independent: P(A and B) = P(A)·P(B)"],
+"PHYSICS":["F = ma;  W = F·d","v = d/t;  a = Δv/t","KE = ½mv^2;  PE = mgh","V = I·R;  P = I·V","Projectiles: split x and y motion"]};
+const mchips=$q("#mchips");Object.keys(LIB).forEach((k,i)=>{const b=document.createElement("button");b.textContent=k;b.onclick=()=>{mchips.querySelectorAll("button").forEach(x=>x.classList.remove("on"));b.classList.add("on");$q("#mathBoard").innerHTML='<span class="mh">'+k+' — KEY IDEAS</span>\n'+LIB[k].map(l=>"▸ "+l).join("\n");};mchips.appendChild(b);});
+function parsePoly(s){s=String(s).replace(/\s+/g,"").replace(/−/g,"-");const ts=s.match(/[+-]?[^+-]+/g)||[];const m={};for(const t of ts){const mm=t.match(/^([+-]?\d*\.?\d*)\*?x(?:\^([+-]?\d+))?$/);if(mm){const c=(mm[1]===""||mm[1]==="+")?1:(mm[1]==="-"?-1:parseFloat(mm[1]));const p=mm[2]?+mm[2]:1;m[p]=(m[p]||0)+c;}else if(/^[+-]?\d*\.?\d+$/.test(t)){m[0]=(m[0]||0)+parseFloat(t);}else return null;}return m;}
+function fmt(m){return Object.keys(m).map(Number).sort((a,b)=>b-a).filter(p=>m[p]!==0).map((p,i)=>{const c=m[p];const sgn=c<0?"- ":(i>0?"+ ":"");const a=Math.abs(c);const co=(a===1&&p>0)?"":a;return sgn+co+(p===0?"":(p===1?"x":"x^"+p));}).join(" ")||"0";}
+function maxP(m){return Math.max(...Object.keys(m).map(Number).filter(p=>m[p]!==0),-99);}
+function runMath(q){const B=$q("#mathBoard");const out=[];const clean=q.replace(/(explain|solve|the|please|derivative of|derivative|integral of|integrate|d\/dx|∫)/gi," ").replace(/[^0-9xX+\-*/^=(). ]/g,"").trim();
+ const sides=clean.split("=");const L=parsePoly(sides[0]||""),Rt=sides[1]!=null?parsePoly(sides[1]):null;
+ if(L&&Rt&&maxP(L)<=1&&maxP(Rt)<=1){const a=(L[1]||0)-(Rt[1]||0),b=(L[0]||0)-(Rt[0]||0);
+  out.push('<span class="mh">LINEAR — STEP BY STEP</span>');out.push("Start: "+fmt(L)+" = "+fmt(Rt));out.push("Move x-terms & constants: ("+a+")x = "+(-b));
+  if(a!==0){out.push("Divide by "+a+":");out.push('<span class="ms">x = '+(-b/a)+"</span>");speak("Solved. x equals "+(-b/a).toFixed(2).replace(/\.00$/,""));}else out.push('<span class="ms">'+(b===0?"True for all x":"No solution")+"</span>");}
+ else if(/derivative|d\/dx/i.test(q)&&L){const d={};Object.keys(L).forEach(p=>{const pp=+p-1;if(+p!==0)d[pp]=(d[pp]||0)+L[p]*+p;});
+  out.push('<span class="mh">DERIVATIVE — POWER RULE</span>');out.push("f(x) = "+fmt(L));Object.keys(L).filter(p=>+p!==0).forEach(p=>out.push("d/dx "+L[p]+"x^"+p+" → "+(L[p]*p)+"x^"+(+p-1)));out.push('<span class="ms">f\'(x) = '+fmt(d)+"</span>");speak("Derivative: "+fmt(d));}
+ else if(/integral|integrate|∫/i.test(q)&&L){const g={};Object.keys(L).forEach(p=>{const pp=+p+1;g[pp]=(g[pp]||0)+L[p]/pp;});
+  out.push('<span class="mh">INTEGRAL — POWER RULE</span>');out.push("∫ "+fmt(L)+" dx");Object.keys(L).forEach(p=>out.push("x^"+p+" → x^"+(+p+1)+"/"+(+p+1)));out.push('<span class="ms">= '+fmt(g)+" + C</span>");speak("Integral: "+fmt(g)+", plus C.");}
+ else if(L&&maxP(L)===2&&(!Rt||maxP(Rt)<=0)){const a=L[2],b=L[1]||0,c=(L[0]||0)-(Rt?Rt[0]||0:0);const D=b*b-4*a*c;
+  out.push('<span class="mh">QUADRATIC FORMULA</span>');out.push("a="+a+", b="+b+", c="+c);out.push("Discriminant D = b^2-4ac = "+D);
+  if(D>=0){const r1=(-b+Math.sqrt(D))/(2*a),r2=(-b-Math.sqrt(D))/(2*a);out.push('<span class="ms">x = '+r1.toFixed(3)+" or x = "+r2.toFixed(3)+"</span>");speak("Roots: "+r1.toFixed(2)+" and "+r2.toFixed(2));}
+  else out.push('<span class="ms">Complex roots (D < 0)</span>');}
+ else if(window.S&&S.geminiKey){out.push('<span class="mh">CONSULTING UPLINK…</span>');B.innerHTML=out.join("\n");
+  (async()=>{try{const r=await fetch("https://generativelanguage.googleapis.com/v1beta/models/gemini-2.0-flash:generateContent?key="+S.geminiKey,{method:"POST",headers:{"Content-Type":"application/json"},body:JSON.stringify({contents:[{parts:[{text:"You are a patient math teacher (JARVIS flavor). Explain step-by-step, under 120 words: "+q}]}]})});const d=await r.json();B.innerHTML+='<span class="ms">'+(d.candidates[0].content.parts[0].text).replace(/</g,"&lt;")+"</span>";}catch(e){B.innerHTML+="\n(uplink failed)";}})();return;}
+ else out.push("I can solve: linear (2x+5=13), quadratics (x^2-5x+6=0), derivatives & integrals of polynomials — or add a Gemini key for anything else.");
+ B.innerHTML=out.join("\n");}
+$q("#mathIn").addEventListener("keydown",e=>{if(e.key==="Enter"){runMath($q("#mathIn").value);}});
+
+/* ================= voice control ================= */
+if(typeof route==="function"){const _r=route;route=async function(t){const low=String(t).toLowerCase();
+ const dm=low.match(/(?:show|open|switch to|deck to|bring up)\s+(?:the\s+)?(schematic|world|table|wave|math)[a-z]*/);
+ if(dm){const map={schematic:"schem",world:"world",table:"table",wave:"wave",math:"math"};setDeck(map[dm[1]]);return "Deck switched: "+dm[1].toUpperCase()+", sir.";}
+ if(low.startsWith("explain")||low.includes("math board")){setDeck("math");if(low.startsWith("explain"))runMath(t.slice(7));return "The board is yours, sir.";}
+ return _r(t);};}
+})();
+</script>
+<!-- ▲▲ MARK XV MULTI-DECK ▲▲ -->
   
 </body>
 </html>
