@@ -1419,6 +1419,61 @@ if(typeof route==="function"){const _r=route;route=async function(t){const low=S
 })();
 </script>
 <!-- ▲▲ VOICE FIX FINAL ▲▲ -->
+
+<!-- ▼▼ WAKE WORD FIX — paste right above </body> ▼▼ -->
+<script>
+(function(){
+const $q=s=>document.querySelector(s);
+const SR=window.SpeechRecognition||window.webkitSpeechRecognition;
+/* neutralize the old hidden wake button so two engines never fight */
+const old=[...document.querySelectorAll("header button")].find(b=>(b.textContent||"").includes("WAKE"));
+if(old){const c=old.cloneNode(true);old.replaceWith(c);}
+let wakeOn=false,wrec=null,backoff=400,paused=false;
+const chip=document.createElement("span");chip.className="p-chip";chip.id="wakechip";chip.style.cursor="pointer";chip.textContent="🎙 OFF";
+const hr=$q(".hright");if(hr)hr.insertBefore(chip,hr.firstChild);
+chip.onclick=()=>wakeOn?disarm():arm();
+function paint(){chip.textContent=wakeOn?"🎙 ARMED":"🎙 OFF";chip.style.borderColor=wakeOn?"#7dffa8":"";chip.style.color=wakeOn?"#7dffa8":"";}
+if(!SR){chip.textContent="🎙 N/A";try{logMsg("jarvis","🎙 This browser lacks speech recognition. Chrome/Edge required, sir.");}catch(e){}return;}
+function arm(){if(wakeOn)return;wakeOn=true;backoff=400;paint();startRec();
+ try{logMsg("jarvis","🎙 Wake word armed. Say “Hey JARVIS” — or “Hey "+(typeof S!=="undefined"?S.name:"JARVIS")+"”.");}catch(e){}}
+function disarm(){wakeOn=false;paint();try{wrec&&wrec.stop();}catch(e){}}
+function startRec(){if(!wakeOn||paused)return;
+ try{
+  wrec=new SR();wrec.lang="en-US";wrec.continuous=true;wrec.interimResults=false;
+  wrec.onresult=e=>{
+   const t=e.results[e.results.length-1][0].transcript.toLowerCase();
+   const names=["hey jarvis","ok jarvis","okay jarvis"];
+   if(typeof S!=="undefined"){names.push("hey "+S.name.toLowerCase(),"ok "+S.name.toLowerCase(),S.name.toLowerCase());}
+   if(names.some(n=>t.includes(n)))wake();
+  };
+  wrec.onerror=e=>{
+   if(e.error==="not-allowed"||e.error==="service-not-allowed"){wakeOn=false;paint();
+    try{logMsg("jarvis","🎙 Microphone blocked. Click the padlock icon → Site settings → allow Microphone, then re-arm.");}catch(x){}}
+   /* 'no-speech'/'aborted' just restart via onend below */
+  };
+  wrec.onend=()=>{if(wakeOn&&!paused){setTimeout(()=>{if(wakeOn&&!paused)startRec();},backoff);backoff=Math.min(3000,backoff+200);}};
+  wrec.start();
+ }catch(e){}}
+function wake(){
+ backoff=400;paused=true;
+ try{sfx(1400,.08);}catch(e){}
+ const o=$q("#orb");if(o)o.classList.add("listening");
+ try{logMsg("jarvis","🎙 Awake. Listening for your command, sir.");}catch(e){}
+ try{wrec&&wrec.stop();}catch(e){}
+ if(typeof rec!=="undefined"){
+  if(!rec.__wrap){rec.__wrap=1;const _re=rec.onend;rec.onend=e=>{if(_re)_re(e);paused=false;setTimeout(startRec,600);};}
+  try{rec.start();}catch(e){paused=false;setTimeout(startRec,600);}
+ }else{paused=false;setTimeout(startRec,600);}
+ const i=$q("#input");if(i)i.focus();
+}
+if(typeof route==="function"){const _r=route;route=async function(t){const low=String(t).toLowerCase();
+ if(low.includes("wake word on")||low.includes("arm wake")){arm();return "Wake word armed. Say 'Hey JARVIS'.";}
+ if(low.includes("wake word off")||low.includes("disarm wake")){disarm();return "Wake word disarmed.";}
+ return _r(t);};}
+paint();
+})();
+</script>
+<!-- ▲▲ WAKE WORD FIX ▲▲ -->
   
 </body>
 </html>
