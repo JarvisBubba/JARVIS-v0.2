@@ -1294,6 +1294,78 @@ if(typeof route==="function"){const _r=route;route=async function(t){const low=S
 })();
 </script>
 <!-- ▲▲ MARK XV MULTI-DECK ▲▲ -->
+
+<!-- ▼▼ MARK XVI REACTIVE DECK — paste right above </body> ▼▼ -->
+<style>
+#autoStage{position:relative;min-height:340px;border:1px solid var(--line);background:#04101c;overflow:hidden}
+#awC{position:absolute;inset:0;width:100%;height:100%}
+#capYou,#capJar{position:absolute;left:12px;right:12px;font-size:.8rem;line-height:1.45;z-index:3;text-shadow:0 0 6px #000}
+#capYou{top:8px;color:var(--amber)}
+#capJar{bottom:8px;color:var(--cyan)}
+.big-num{position:absolute;inset:0;display:flex;flex-direction:column;align-items:center;justify-content:center;font-family:Orbitron;font-size:3rem;color:var(--cyan);text-shadow:0 0 30px rgba(63,210,255,.7);z-index:2}
+.big-num small{font-size:.6rem;letter-spacing:.3em;color:var(--cyan-dim)}
+.holo-card{position:absolute;inset:20px;border:1px solid var(--line);padding:16px;background:rgba(4,22,38,.85);overflow:auto;font-size:.9rem;line-height:1.6;z-index:2}
+.holo-card b{color:var(--amber)}
+.coin{position:absolute;left:50%;top:50%;width:120px;height:120px;margin:-60px 0 0 -60px;border-radius:50%;border:3px solid var(--amber);display:flex;align-items:center;justify-content:center;font-family:Orbitron;font-size:1.2rem;color:var(--amber);animation:coinflip 1.2s ease;z-index:2;box-shadow:0 0 30px rgba(255,181,77,.4)}
+@keyframes coinflip{from{transform:rotateY(0)}to{transform:rotateY(1800deg)}}
+.die{position:absolute;width:64px;height:64px;border:2px solid var(--cyan);display:flex;align-items:center;justify-content:center;font-family:Orbitron;font-size:1.6rem;color:var(--cyan);animation:gin .4s ease;z-index:2;box-shadow:0 0 16px rgba(63,210,255,.4)}
+.drop{position:absolute;width:2px;height:14px;background:var(--cyan);animation:fall 1s linear infinite;z-index:1;opacity:.7}
+.drop.snow{width:4px;height:4px;border-radius:50%;background:#fff;animation-duration:2.4s}
+@keyframes fall{to{transform:translateY(360px)}}
+.sun{position:absolute;left:50%;top:42%;width:90px;height:90px;margin:-45px 0 0 -45px;border-radius:50%;background:radial-gradient(circle,#ffe9a8,var(--amber) 60%,transparent 75%);box-shadow:0 0 60px var(--amber);z-index:1}
+.cloud{position:absolute;left:50%;top:40%;width:140px;height:44px;margin:-22px 0 0 -70px;border-radius:40px;background:rgba(160,200,220,.25);box-shadow:0 0 30px rgba(160,200,220,.3);z-index:1}
+</style>
+<script>
+(function(){
+const $q=s=>document.querySelector(s);
+const tabs=$q(".deck-tabs");if(!tabs)return;
+const ab=document.createElement("button");ab.dataset.d="auto";ab.textContent="◉ AUTO";tabs.insertBefore(ab,tabs.firstChild);
+const dv=document.createElement("div");dv.className="deck-view";dv.id="dv-auto";
+dv.innerHTML='<div id="autoStage"><canvas id="awC"></canvas><div id="capYou"></div><div id="capJar"></div></div>';
+$q(".deck").appendChild(dv);ab.click();
+
+/* ambient radial wave (default visual) */
+const aw=$q("#awC"),az=aw.getContext("2d");const AB=new Array(60).fill(0);
+(function aLoop(){requestAnimationFrame(aLoop);if(!dv.classList.contains("on"))return;
+ const w=aw.width=aw.clientWidth||600,h=aw.height=aw.clientHeight||340;az.clearRect(0,0,w,h);
+ const o=$q(".orb");const tgt=o&&o.classList.contains("speaking")?1:o&&o.classList.contains("listening")?.55:.12;
+ const col=document.body.classList.contains("stark")?"255,194,77":"63,210,255";
+ const cx=w/2,cy=h/2,R=Math.min(w,h)/2-70;
+ for(let i=0;i<60;i++){AB[i]+=(tgt*(0.25+Math.random()*0.75)-AB[i])*.3;const a=i/60*Math.PI*2;const len=6+AB[i]*50;
+  az.strokeStyle=`rgba(${col},${0.25+AB[i]*0.75})`;az.lineWidth=3;az.beginPath();az.moveTo(cx+Math.cos(a)*R,cy+Math.sin(a)*R);az.lineTo(cx+Math.cos(a)*(R+len),cy+Math.sin(a)*(R+len));az.stroke();}
+ az.strokeStyle=`rgba(${col},.4)`;az.beginPath();az.arc(cx,cy,R-8,0,7);az.stroke();})();
+
+let vizIv=null;
+function clearViz(){clearInterval(vizIv);document.querySelectorAll("#autoStage .vizel").forEach(e=>e.remove());}
+function el(cls,html){const d=document.createElement("div");d.className="vizel "+cls;if(html!=null)d.innerHTML=html;document.getElementById("autoStage").appendChild(d);return d;}
+function caption(t,a){$q("#capYou").textContent="YOU ▸ "+t;const cj=$q("#capJar");cj.textContent="";const s=(a||"").slice(0,160);let i=0;clearInterval(vizIv);vizIv=setInterval(()=>{i+=3;cj.textContent="JARVIS ▸ "+s.slice(0,i);if(i>=s.length)clearInterval(vizIv);},30);}
+
+function viz(t,a){ab.click();clearViz();caption(t,a);const low=t.toLowerCase();const stage=$q("#autoStage");
+ /* math → hand off to the MATH deck board */
+ if(low.startsWith("explain")||/derivative|integral|integrate/.test(low)){const mt=$q('.deck-tabs button[data-d="math"]');if(mt)mt.click();const mi=$q("#mathIn");if(mi){mi.value=t;mi.dispatchEvent(new KeyboardEvent("keydown",{key:"Enter"}));}return;}
+ if(/weather/.test(low)){wxViz(low);return;}
+ if(low.includes("time")){const b=el("big-num");vizIv=setInterval(()=>{b.innerHTML=new Date().toLocaleTimeString()+"<small>LOCAL TIME</small>";},250);b.innerHTML=new Date().toLocaleTimeString()+"<small>LOCAL TIME</small>";return;}
+ if(low.includes("date")||low.includes("today")){el("big-num",new Date().toLocaleDateString(undefined,{weekday:"long"})+"<small>"+new Date().toLocaleDateString(undefined,{year:"numeric",month:"long",day:"numeric"})+"</small>");return;}
+ if(low.includes("coin")){el("coin",(a||"").includes("Heads")?"HEADS":"TAILS");return;}
+ if(/roll|dice|d\d/.test(low)){const nums=(a||"").match(/\d+/g)||[];const show=nums.slice(0,-1).length?nums.slice(0,-1):nums;show.slice(0,6).forEach((n,i)=>{const d=el("die",n);d.style.left=(18+i*13)+"%";d.style.top="42%";});return;}
+ if(low.includes("wiki")||/^(who|what) (is|are|was)/.test(low)){el("holo-card","<b>📚 HOLO-ARCHIVE</b><br>"+(a||"").replace(/</g,"&lt;"));return;}
+ if(low.includes("joke")||low.includes("quote")){const c=el("holo-card","<b>😏 COMEDY SUBROUTINE</b><br><span class='ty'></span>");const s=(a||"");let i=0;vizIv=setInterval(()=>{i+=2;c.querySelector(".ty").textContent=s.slice(0,i);if(i>=s.length)clearInterval(vizIv);},25);return;}
+ if(low.includes("launch")||low.includes("iss")||low.includes("space")){(async()=>{try{const d=await(await fetch("https://api.wheretheiss.at/v1/satellites/25544")).json();el("holo-card","<b>🛰 ISS TRACK</b><br>ALTITUDE: "+Math.round(d.altitude)+" km<br>VELOCITY: "+Math.round(d.velocity)+" km/h<br>LAT/LON: "+d.latitude.toFixed(1)+" / "+d.longitude.toFixed(1));}catch(e){el("holo-card","<b>🛰</b> uplink failed");}})();return;}
+ if(/calc|=/.test(low)||/^[0-9+\-*/().%\s^x×÷]+$/.test(t.trim())){const nums=(a||"").match(/-?[\d.]+/g);el("big-num",(nums?nums[nums.length-1]:"?")+"<small>"+t.replace(/</g,"&lt;")+"</small>");return;}
+ /* anything else → waveform + captions (already running) */
+}
+async function wxViz(low){const m=low.match(/weather\s*(?:in|for|at)?\s*(.*)/);const city=m&&m[1]?m[1]:"";
+ try{let lat=window.__lat,lon=window.__lon,label="YOUR SECTOR";
+  if(city){const g=await(await fetch("https://geocoding-api.open-meteo.com/v1/search?name="+encodeURIComponent(city)+"&count=1")).json();if(g.results){lat=g.results[0].latitude;lon=g.results[0].longitude;label=g.results[0].name.toUpperCase();}}
+  const f=await(await fetch("https://api.open-meteo.com/v1/forecast?latitude="+lat+"&longitude="+lon+"&current=temperature_2m,weather_code")).json();
+  const c=f.current.weather_code;
+  if(c<=1)el("sun");else if(c>=45&&c<=48)el("cloud");else{el(c>=71&&c<=77?"cloud":"cloud");for(let i=0;i<36;i++){const d=el("drop"+(c>=71&&c<=77?" snow":""));d.style.left=Math.random()*100+"%";d.style.top="-20px";d.style.animationDelay=Math.random()*2+"s";}}
+  el("big-num",Math.round(f.current.temperature_2m)+"°C<small>"+label+"</small>");
+ }catch(e){}}
+if(typeof route==="function"){const _r=route;route=async function(t){const a=await _r(t);if(a)viz(t,a);return a;};}
+})();
+</script>
+<!-- ▲▲ MARK XVI REACTIVE DECK ▲▲ -->
   
 </body>
 </html>
