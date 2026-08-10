@@ -13,7 +13,7 @@ body{min-height:100vh;color:var(--text);font-family:"Rajdhani",sans-serif;font-s
 body::before{content:"";position:fixed;inset:0;pointer-events:none;z-index:1;background:linear-gradient(rgba(63,210,255,.05) 1px,transparent 1px),linear-gradient(90deg,rgba(63,210,255,.05) 1px,transparent 1px);background-size:44px 44px}
 body::after{content:"";position:fixed;left:0;right:0;height:140px;top:-140px;pointer-events:none;z-index:1;background:linear-gradient(180deg,transparent,rgba(63,210,255,.07),transparent);animation:scan 7s linear infinite}
 @keyframes scan{to{top:110vh}}@keyframes spin{to{transform:rotate(360deg)}}@keyframes pulse{50%{transform:scale(.94);filter:brightness(.85)}}@keyframes blink{50%{opacity:.25}}@keyframes holo{0%,93%,100%{opacity:1}94%{opacity:.82}96%{opacity:.95}98%{opacity:.88}}@keyframes msgIn{from{opacity:0;transform:translateY(8px);filter:brightness(2.2)}to{opacity:1;filter:brightness(1)}}@keyframes surgeK{0%{filter:brightness(1)}30%{filter:brightness(2.6) drop-shadow(0 0 60px rgba(63,210,255,1))}100%{filter:brightness(1)}}@keyframes tscan{from{top:8%}to{top:92%}}
-body.stark{--bg:#140b03;--panel:rgba(29,18,6,.8);--line:#5e3a12;--cyan:#ffc24d;--cyan-dim:#b06a1c}
+body.Bubba{--bg:#140b03;--panel:rgba(29,18,6,.8);--line:#5e3a12;--cyan:#ffc24d;--cyan-dim:#b06a1c}
 #fx{position:fixed;inset:0;z-index:0;pointer-events:none}header,.hud,footer{position:relative;z-index:2}
 #reticle{position:fixed;left:0;top:0;width:34px;height:34px;margin:-17px 0 0 -17px;border:1px solid rgba(63,210,255,.55);border-radius:50%;pointer-events:none;z-index:60;mix-blend-mode:screen;opacity:.65;transition:opacity .3s}
 #reticle::before,#reticle::after{content:"";position:absolute;background:rgba(63,210,255,.55)}#reticle::before{left:50%;top:-7px;width:1px;height:8px;box-shadow:0 40px 0 rgba(63,210,255,.55)}#reticle::after{top:50%;left:-7px;height:1px;width:8px;box-shadow:40px 0 0 rgba(63,210,255,.55)}
@@ -25,7 +25,7 @@ body.stark{--bg:#140b03;--panel:rgba(29,18,6,.8);--line:#5e3a12;--cyan:#ffc24d;-
 header{display:flex;justify-content:space-between;align-items:center;gap:16px;padding:12px 24px;border-bottom:1px solid var(--line);font-family:"Orbitron",sans-serif;background:linear-gradient(180deg,rgba(3,16,28,.9),rgba(3,16,28,.4))}
 header h1{font-size:1.3rem;letter-spacing:.35em;color:var(--cyan);text-shadow:0 0 18px rgba(63,210,255,.6)}.hright{display:flex;align-items:center;gap:14px}
 header .meta{font-size:.68rem;letter-spacing:.15em;color:var(--cyan-dim);text-align:right}header .meta b{color:var(--amber)}
-#badge{display:none;font-size:.6rem;letter-spacing:.25em;color:var(--red);border:1px solid var(--red);padding:4px 10px;animation:blink 1s infinite}body.stark #badge{display:inline-block}
+#badge{display:none;font-size:.6rem;letter-spacing:.25em;color:var(--red);border:1px solid var(--red);padding:4px 10px;animation:blink 1s infinite}body.Bubba #badge{display:inline-block}
 button,#chat-btn{font-family:"Orbitron";font-size:.62rem;letter-spacing:.2em;cursor:pointer;background:transparent;border:1px solid var(--cyan);color:var(--cyan);padding:0 16px;transition:background .15s,color .15s;min-height:36px}
 button:hover,#chat-btn:hover{background:var(--cyan);color:#04101c}
 #chat-btn{display:inline-flex;align-items:center;border-color:var(--amber);color:var(--amber);background:rgba(255,181,77,.08);text-decoration:none;text-transform:uppercase}#chat-btn:hover{background:var(--amber);color:#04101c}
@@ -165,11 +165,11 @@ refresh();
 
 <canvas id="fx"></canvas><div id="reticle"></div>
 <div id="boot"><pre id="boot-log"></pre><div class="b-bar"><i id="boot-bar"></i></div><div class="b-skip">CLICK TO SKIP</div></div>
-<header><h1 id="title">J.A.R.V.I.S.</h1><div class="hright"><span id="badge">⚠ STARK PROTOCOL</span><div class="meta">CORE: <b>ONLINE</b> · UPLINK: <b id="uplink">OFFLINE</b><br><span id="clock">--:--:--</span> UTC</div><button type="button" id="target-btn">◎ TARGET</button><a href="chat.html" id="chat-btn">💬 CHAT</a><button type="button" id="gear">⚙ SETTINGS</button></div></header>
+<header><h1 id="title">J.A.R.V.I.S.</h1><div class="hright"><span id="badge">⚠ Bubba PROTOCOL</span><div class="meta">CORE: <b>ONLINE</b> · UPLINK: <b id="uplink">OFFLINE</b><br><span id="clock">--:--:--</span> UTC</div><button type="button" id="target-btn">◎ TARGET</button><a href="chat.html" id="chat-btn">💬 CHAT</a><button type="button" id="gear">⚙ SETTINGS</button></div></header>
 <div class="hud"><aside class="col"><div class="module"><h3>CORE OUTPUT <span>▮</span></h3><svg viewBox="0 0 120 120" class="gauge"><circle cx="60" cy="60" r="52" class="g-bg"></circle><circle cx="60" cy="60" r="52" class="g-fg" id="gaugeArc"></circle><text x="60" y="60" class="g-val" id="gaugeVal">98</text><text x="60" y="78" class="g-sub">CORE %</text></svg><div class="meter"><div class="lbl"><span>THRUSTERS</span><b>STBY</b></div><div class="bar"><i style="width:12%"></i></div></div><div class="meter"><div class="lbl"><span>AUX SYSTEMS</span><b>OK</b></div><div class="bar"><i></i></div></div></div><div class="module"><h3>DATA BUS <span>▮</span></h3><div class="stream" id="streamL"></div></div><div class="module"><h3>PROXIMITY SCAN <span>▮</span></h3><div class="radar"><span class="dot" style="top:30%; left:60%"></span><span class="dot" style="top:64%; left:38%"></span></div><div class="rows"><div><span>CONTACTS</span><b>2</b></div><div><span>THREAT</span><b>NONE</b></div></div></div></aside>
 <section class="center"><div class="reactor-wrap"><h2>ARC REACTOR — MARK VII</h2><div class="orb" id="orb" title="Click to surge"><div class="ring r1"></div><div class="ring r2"></div><div class="ring r3"></div><div class="seg"></div><div class="tri t1"></div><div class="tri t2"></div><div class="tri t3"></div></div><div class="state" id="state">STANDBY</div><canvas id="viz"></canvas></div><div class="console"><h2>COMMAND CONSOLE</h2><div id="log"></div><form id="form"><input type="text" id="input" placeholder='Speak or type… try "help"' autocomplete="off"><button type="submit">SEND</button><button type="button" id="mic">🎤 MIC</button></form><div class="chips" id="chips"></div></div></section>
 <aside class="col"><div class="module"><h3>CHRONO <span>▮</span></h3><div class="big"><div class="num" id="bigclock">--:--:--</div><div class="sub" id="bigdate">----</div></div></div><div class="module"><h3>ENVIRONMENT <span>▮</span></h3><div class="big"><div class="num" id="temp">30°C</div><div class="sub">EXTERNAL TEMP</div></div><div class="rows" style="margin-top:8px"><div><span>HUMIDITY</span><b id="hum">42%</b></div><div><span>PRESSURE</span><b>1013 hPa</b></div></div></div><div class="module"><h3>CIPHER FEED <span>▮</span></h3><div class="stream" id="streamR"></div></div><div class="module"><h3>UPLINK ARRAY <span>▮</span></h3><div class="rows"><div><span>SAT-7</span><b>LINKED</b></div><div><span>ENCRYPT</span><b>AES-256</b></div><div><span>PACKETS</span><b id="pkt">0</b></div></div></div></aside></div>
-<footer>STARK INDUSTRIES</footer>
+<footer>Bubba INDUSTRIES</footer>
 <div id="targeting"><div class="corner c-tl"></div><div class="corner c-tr"></div><div class="corner c-bl"></div><div class="corner c-br"></div><div id="t-scan"></div><div id="t-ret"><div class="rr rr1"></div><div class="rr rr2"></div><div class="cx"></div></div><div id="t-data">TGT-MODE v2.4<br>X:<span id="t-x">0000</span> Y:<span id="t-y">0000</span><br>RANGE: <span id="t-range">--</span><br>LOCK: <span id="t-lock">--</span></div><div id="t-exit">TARGETING MODE — [T] OR ◎ TO DISENGAGE</div></div>
 <div id="overlay" hidden><div class="modal"><h2>SETTINGS — IDENTITY</h2><label>Assistant name <input type="text" id="s-name" maxlength="24"></label><label>Address me as <input type="text" id="s-user" maxlength="24" placeholder="optional"></label><label>Personality <select id="s-persona"><option value="butler">Butler</option><option value="snark">Snark</option><option value="pirate">Pirate</option><option value="hype">Hype</option></select></label><label class="row"><input type="checkbox" id="s-voice"> Voice replies</label><label class="row"><input type="checkbox" id="s-sfx"> Interface sounds</label><h2 class="sub">SETTINGS — GEMINI UPLINK</h2><label>Gemini API Key <span class="keyrow"><input type="password" id="s-key" placeholder="AIza..."><button type="button" id="s-eye">SHOW</button></span></label><div class="hint">Stored locally. Get free key at aistudio.google.com.</div><div id="s-status"></div><div class="btnrow"><button type="button" id="s-test">TEST</button><button type="button" id="s-save">SAVE</button><button type="button" id="s-close">CLOSE</button></div><div class="egg-hint">↑ ↑ ↓ ↓ ← → ← → B A</div></div></div>
 
@@ -194,8 +194,8 @@ async function weather(city){try{const g=await(await fetch("https://geocoding-ap
 async function wiki(topic){const u="https://en.wikipedia.org/api.php?action=query&format=json&prop=extracts&exintro=1&explaintext=1&redirects=1&origin=*&titles="+encodeURIComponent(topic);const d=await(await fetch(u)).json();const p=Object.values(d.query.pages)[0];return p.missing!==undefined?"Nothing found.":`📚 ${p.title}: ${p.extract.slice(0,200)}`;}
 async function route(raw){const t=raw.trim();const low=t.toLowerCase();if(!low)return "Listening.";let m;if(low==="help")return HELP;if(/^(hi|hello|hey|yo)\b/.test(low))return pick(P().greet);if(low.includes("time"))return "🕐 "+new Date().toLocaleTimeString();if(low.includes("date"))return "📅 "+new Date().toLocaleDateString();if(low.includes("joke"))return "😏 "+pick(JOKES);if(low.includes("quote"))return "💬 "+pick(QUOTES);if(low.includes("flip"))return "🪙 "+(Math.random()<.5?"Heads.":"Tails.");if(m=low.match(/roll\s+(\d*)d(\d+)/)){const n=Math.min(parseInt(m[1]||1),50),s=parseInt(m[2]);return `🎲 ${Array.from({length:n},()=>1+Math.floor(Math.random()*s)).join(", ")}`;}if(low.startsWith("calc "))return calc(low.slice(5));if(isArith(t))return calc(t);if(low.startsWith("weather"))return weather(low.replace(/^weather\s*(in|for|at)?\s*/,""));if(m=low.match(/^(?:who|what) (?:is|are|was) (.+)/))return wiki(m[1]);if(low.startsWith("wiki "))return wiki(t.slice(5));if(m=low.match(/^open (\w+)/)){window.open(SITES[m[1]]||"https://google.com","_blank");return "Opening.";}if(m=t.match(/^remind me to (.+?) at (\d{1,2}):(\d{2})$/i)){const due=new Date();due.setHours(+m[2],+m[3],0,0);if(due<Date.now())due.setDate(due.getDate()+1);store.rems=[...store.rems,{text:m[1],due:due.toISOString()}];return "Reminder set.";}if(m=t.match(/^(?:note|remember) (.+)/i)){store.notes=[...store.notes,{text:m[1],at:new Date().toLocaleString()}];return "Noted.";}if(low==="notes"){return store.notes.map(x=>"• "+x.text).join("\n")||"Clean slate.";}if(low==="clear notes"){store.notes=[];store.rems=[];return "Wiped.";}if(S.geminiKey){stateEl.textContent="UPLINK…";try{return await llm(t);}catch(e){return "Uplink failed.";}}return pick(P().unknown);}
 function selfDestruct(){orb.classList.add("alarm");stateEl.textContent="⚠ SELF-DESTRUCT";speechSynthesis.cancel();sfx(180,.4,"sawtooth",.06);logMsg("jarvis","⚠ Initiated.");let n=3;const tick=()=>{if(n>0){logMsg("jarvis",String(n)+"…");speak(String(n));n--;setTimeout(tick,900);}else{orb.classList.remove("alarm");stateEl.textContent="STANDBY";logMsg("jarvis","Just kidding.");speak("Just kidding.");}};setTimeout(tick,700);}
-function starkMode(){const on=document.body.classList.toggle("stark");logMsg("jarvis",on?"⚠ STARK PROTOCOL ENGAGED.":"Disengaged.");speak(on?"Stark protocol engaged.":"Disengaged.");}
-const KONAMI=["ArrowUp","ArrowUp","ArrowDown","ArrowDown","ArrowLeft","ArrowRight","ArrowLeft","ArrowRight","b","a"];let kIdx=0;addEventListener("keydown",e=>{if(e.target.closest("input,select"))return;const k=e.key.length===1?e.key.toLowerCase():e.key;if(k===KONAMI[kIdx]){kIdx++;if(kIdx===KONAMI.length){kIdx=0;starkMode();}}else kIdx=(k===KONAMI[0])?1:0;});
+function BubbaMode(){const on=document.body.classList.toggle("Bubba");logMsg("jarvis",on?"⚠ Bubba PROTOCOL ENGAGED.":"Disengaged.");speak(on?"Bubba protocol engaged.":"Disengaged.");}
+const KONAMI=["ArrowUp","ArrowUp","ArrowDown","ArrowDown","ArrowLeft","ArrowRight","ArrowLeft","ArrowRight","b","a"];let kIdx=0;addEventListener("keydown",e=>{if(e.target.closest("input,select"))return;const k=e.key.length===1?e.key.toLowerCase():e.key;if(k===KONAMI[kIdx]){kIdx++;if(kIdx===KONAMI.length){kIdx=0;BubbaMode();}}else kIdx=(k===KONAMI[0])?1:0;});
 const overlay=$("#overlay");function openSettings(){$("#s-name").value=S.name;$("#s-user").value=S.userName;$("#s-persona").value=S.personality;$("#s-voice").checked=S.voice;$("#s-sfx").checked=S.sfx!==false;$("#s-key").value=S.geminiKey;$("#s-status").textContent="";overlay.hidden=false;}function closeSettings(){overlay.hidden=true;}$("#gear").onclick=()=>{sfx(700,.05);openSettings();};$("#s-close").onclick=closeSettings;overlay.addEventListener("click",e=>{if(e.target===overlay)closeSettings();});$("#s-eye").onclick=()=>{const k=$("#s-key");const show=k.type==="password";k.type=show?"text":"password";$("#s-eye").textContent=show?"HIDE":"SHOW";};
 $("#s-save").onclick=()=>{S.name=$("#s-name").value.trim()||"J.A.R.V.I.S.";S.userName=$("#s-user").value.trim();S.personality=$("#s-persona").value;S.voice=$("#s-voice").checked;S.sfx=$("#s-sfx").checked;S.geminiKey=$("#s-key").value.trim();saveSettings();applyIdentity();closeSettings();sfx(880,.07);logMsg("jarvis","Saved.");speak("Saved.");};
 $("#s-test").onclick=async()=>{const st=$("#s-status");st.style.color="var(--cyan)";st.textContent="Contacting…";const key=$("#s-key").value.trim();if(!key){st.style.color="var(--red)";st.textContent="✘ No key.";return;}try{const r=await fetch(`https://generativelanguage.googleapis.com/v1beta/models/gemini-2.0-flash:generateContent?key=${key}`,{method:"POST",headers:{"Content-Type":"application/json"},body:JSON.stringify({contents:[{parts:[{text:"ping"}]}]})});st.style.color=r.ok?"var(--cyan)":"var(--red)";st.textContent=r.ok?"✔ Online.":"✘ Rejected.";}catch{st.style.color="var(--red)";st.textContent="✘ Network error.";}};
@@ -208,7 +208,7 @@ function setTarget(on){targetOn=on;$("#targeting").classList.toggle("on",on);ret
 $("#target-btn").onclick=()=>setTarget(!targetOn);addEventListener("keydown",e=>{if(e.target.closest("input,select"))return;if(e.key==="t"||e.key==="T")setTarget(!targetOn);if(e.key==="Escape"&&targetOn)setTarget(false);});
 setInterval(()=>{if(!targetOn)return;$("#t-range").textContent=(5+Math.random()*120).toFixed(1)+"m";$("#t-lock").textContent=Math.floor(60+Math.random()*40)+"%";},500);
 const viz=$("#viz"),vz=viz.getContext("2d");const BARS=56,vals=new Array(BARS).fill(0);let vizLevel=0;function vizTarget(){if(orb.classList.contains("speaking"))return 1;if(orb.classList.contains("listening"))return .6;return .12;}
-(function drawViz(){const w=viz.width=viz.clientWidth||300,h=viz.height=viz.clientHeight||38;vz.clearRect(0,0,w,h);vizLevel+=(vizTarget()-vizLevel)*.08;const col=document.body.classList.contains("stark")?"255,194,77":"63,210,255";const bw=w/BARS;for(let i=0;i<BARS;i++){const target=vizLevel*(0.2+Math.random()*0.8);vals[i]+=(target-vals[i])*.35;const bh=Math.max(2,vals[i]*h);vz.fillStyle=`rgba(${col},${(0.25+vals[i]*0.75).toFixed(2)})`;vz.fillRect(i*bw+1,(h-bh)/2,bw-2,bh);}requestAnimationFrame(drawViz);})();
+(function drawViz(){const w=viz.width=viz.clientWidth||300,h=viz.height=viz.clientHeight||38;vz.clearRect(0,0,w,h);vizLevel+=(vizTarget()-vizLevel)*.08;const col=document.body.classList.contains("Bubba")?"255,194,77":"63,210,255";const bw=w/BARS;for(let i=0;i<BARS;i++){const target=vizLevel*(0.2+Math.random()*0.8);vals[i]+=(target-vals[i])*.35;const bh=Math.max(2,vals[i]*h);vz.fillStyle=`rgba(${col},${(0.25+vals[i]*0.75).toFixed(2)})`;vz.fillRect(i*bw+1,(h-bh)/2,bw-2,bh);}requestAnimationFrame(drawViz);})();
 const cv=$("#fx"),cx2=cv.getContext("2d");let W,H,pts=[];function resize(){W=cv.width=innerWidth;H=cv.height=innerHeight;}addEventListener("resize",resize);resize();pts=Array.from({length:Math.min(70,Math.floor(W*H/22000))},()=>({x:Math.random()*W,y:Math.random()*H,vx:(Math.random()-.5)*.4,vy:(Math.random()-.5)*.4}));
 (function tick(){cx2.clearRect(0,0,W,H);for(const p of pts){p.x+=p.vx;p.y+=p.vy;if(p.x<0||p.x>W)p.vx*=-1;if(p.y<0||p.y>H)p.vy*=-1;}cx2.strokeStyle="rgba(63,210,255,.10)";cx2.fillStyle="rgba(63,210,255,.45)";for(let i=0;i<pts.length;i++){const a=pts[i];cx2.fillRect(a.x,a.y,1.6,1.6);for(let j=i+1;j<pts.length;j++){const b=pts[j],dx=a.x-b.x,dy=a.y-b.y;if(dx*dx+dy*dy<16900){cx2.beginPath();cx2.moveTo(a.x,a.y);cx2.lineTo(b.x,b.y);cx2.stroke();}}}requestAnimationFrame(tick);})();
 function scramble(el,final,dur=900){const chars="!<>-_\\/[]{}—=+*^?#";const start=performance.now();(function frame(t){const p=Math.min(1,(t-start)/dur);const n=Math.floor(p*final.length);let out=final.slice(0,n);for(let i=n;i<final.length;i++)out+=final[i]===" "?" ":chars[Math.floor(Math.random()*chars.length)];el.textContent=out;if(p<1)requestAnimationFrame(frame);else el.textContent=final;})(start);}
@@ -254,7 +254,7 @@ const isAdm=!!(sess&&sess.email&&ADMINS.indexOf(sess.email.toLowerCase())>-1);
 if(!localStorage.getItem("jarvis.since"))localStorage.setItem("jarvis.since",Date.now());
 
 /* ---------- achievements ---------- */
-const ACH={boot:"FIRST LIGHT",konami:"STARK LEGACY",surge5:"OVERCHARGE",msg10:"CONVERSATIONALIST",hit10:"MARKSMAN",cast:"COMMAND VOICE",night:"NIGHT OWL",id:"IDENTIFIED"};
+const ACH={boot:"FIRST LIGHT",konami:"Bubba LEGACY",surge5:"OVERCHARGE",msg10:"CONVERSATIONALIST",hit10:"MARKSMAN",cast:"COMMAND VOICE",night:"NIGHT OWL",id:"IDENTIFIED"};
 let ach=(()=>{try{return JSON.parse(localStorage.getItem("jarvis.ach")||"{}")}catch(e){return{}}})();
 function unlock(id){if(ach[id])return;ach[id]=1;localStorage.setItem("jarvis.ach",JSON.stringify(ach));toast("🏆 UNLOCKED: "+ACH[id],true);try{sfx(880,.08);setTimeout(()=>sfx(1320,.1),100);}catch(e){}}
 
@@ -298,7 +298,7 @@ function initHolo(){const THREE=window.THREE;if(!THREE||!$q(".orb"))return;
  (function loop(){requestAnimationFrame(loop);
   const base=$q(".orb").classList.contains("speaking")?3:$q(".orb").classList.contains("listening")?1.6:1;
   const alarm=$q(".orb").classList.contains("alarm");
-  matC.color.set(alarm?0xff5d5d:(document.body.classList.contains("stark")?0xffc24d:0x3fd2ff));
+  matC.color.set(alarm?0xff5d5d:(document.body.classList.contains("Bubba")?0xffc24d:0x3fd2ff));
   burst*=.94;spd+=(base+burst-spd)*.1;
   core.rotation.y+=.01*spd;core.rotation.x+=.004*spd;r1.rotation.z+=.008*spd;r2.rotation.z-=.006*spd;pts.rotation.y+=.002*spd;
   const s=1+Math.sin(Date.now()/500)*.05*spd;core.scale.set(s,s,s);
@@ -365,11 +365,11 @@ llm=async function(q){const ctx=mem.slice(-6).map(m=>m.r+": "+m.t).join(" | ");r
 /* ---------- 11) achievements hooks ---------- */
 const _logMsg=logMsg;let msgCnt=0;
 logMsg=function(w,t){if(w==="user"){msgCnt++;if(msgCnt>=10)unlock("msg10");}return _logMsg(w,t);};
-const _stark=starkMode;starkMode=function(){_stark();unlock("konami");};
+const _Bubba=BubbaMode;BubbaMode=function(){_Bubba();unlock("konami");};
 new MutationObserver(()=>{if($q("#gate").style.display==="none")unlock("boot");}).observe($q("#gate"),{attributes:true,attributeFilter:["style"]});
 let surgeCnt=0;$q(".orb").addEventListener("click",()=>{surgeCnt++;if(surgeCnt>=5)unlock("surge5");});
 
-/* ---------- 10) Stark ID card ---------- */
+/* ---------- 10) Bubba ID card ---------- */
 const idOv=document.createElement("div");idOv.id="idOv";idOv.hidden=true;
 idOv.innerHTML='<canvas id="idc" width="640" height="400"></canvas><div class="g-row"><button id="id-dl" class="g-btn">DOWNLOAD</button><button id="id-x" class="g-btn ghost">CLOSE</button></div>';
 document.body.appendChild(idOv);
@@ -377,12 +377,12 @@ const idBtn=document.createElement("button");idBtn.type="button";idBtn.textConte
 idBtn.onclick=()=>{idOv.hidden=false;drawId();unlock("id");};
 $q(".hright").insertBefore(idBtn,humBtn);
 $q("#id-x").onclick=()=>idOv.hidden=true;
-$q("#id-dl").onclick=()=>{const a=document.createElement("a");a.download="stark-id.png";a.href=$q("#idc").toDataURL("image/png");a.click();};
+$q("#id-dl").onclick=()=>{const a=document.createElement("a");a.download="Bubba-id.png";a.href=$q("#idc").toDataURL("image/png");a.click();};
 function drawId(){const c=$q("#idc"),x=c.getContext("2d");
  const g=x.createLinearGradient(0,0,640,400);g.addColorStop(0,"#04101c");g.addColorStop(1,"#0a2a44");x.fillStyle=g;x.fillRect(0,0,640,400);
  x.strokeStyle="rgba(63,210,255,.15)";for(let i=0;i<640;i+=32){x.beginPath();x.moveTo(i,0);x.lineTo(i,400);x.stroke();}for(let i=0;i<400;i+=32){x.beginPath();x.moveTo(0,i);x.lineTo(640,i);x.stroke();}
  x.strokeStyle="#3fd2ff";x.lineWidth=2;x.strokeRect(10,10,620,380);
- x.fillStyle="#3fd2ff";x.font="700 22px Orbitron, sans-serif";x.fillText("STARK INDUSTRIES",30,52);
+ x.fillStyle="#3fd2ff";x.font="700 22px Orbitron, sans-serif";x.fillText("Bubba INDUSTRIES",30,52);
  x.font="12px Orbitron, sans-serif";x.fillStyle="#1a7f99";x.fillText("CLEARANCE CARD // MARK VIII",30,74);
  x.fillStyle="#ffb54d";x.font="700 34px Orbitron, sans-serif";x.fillText(myName.toUpperCase(),30,140);
  x.fillStyle=isAdm?"#7dffa8":"#3fd2ff";x.font="16px Orbitron, sans-serif";x.fillText(isAdm?"CLEARANCE: OWNER (LEVEL 10)":"CLEARANCE: AGENT",30,172);
@@ -544,7 +544,7 @@ const REG=[
  {sec:"SUIT SYSTEMS",say:["hum on","reactor hum"],label:"hum on / off",desc:"Reactor ambient hum",run:()=>{if(!humOn())clickBtn("HUM");return "Hum engaged.";}},
  {sec:"SUIT SYSTEMS",say:["wake word off"],hide:1,run:()=>{if(wakeOn())clickBtn("WAKE");return "Wake word disarmed.";}},
  {sec:"SUIT SYSTEMS",say:["wake word on","wake word"],label:"wake word on / off",desc:"Arm hands-free 'Hey JARVIS'",run:()=>{if(!wakeOn())clickBtn("WAKE");return "Wake word armed. Say 'Hey JARVIS'.";}},
- {sec:"SUIT SYSTEMS",say:["show my id","id card","clearance card"],label:"show my id card",desc:"Stark clearance card",run:()=>{clickBtn("ID");return null;}},
+ {sec:"SUIT SYSTEMS",say:["show my id","id card","clearance card"],label:"show my id card",desc:"Bubba clearance card",run:()=>{clickBtn("ID");return null;}},
  {sec:"INTEL & SITE",say:["read the briefing","briefing"],label:"read the briefing",desc:"Speak today's repo briefing",run:()=>readMod("#brief","Briefing")},
  {sec:"INTEL & SITE",say:["any earthquakes","seismic","earthquake report"],label:"any earthquakes",desc:"Live seismic report",run:()=>readMod("#quake","Seismic report")},
  {sec:"INTEL & SITE",say:["top headlines","intel feed","headlines"],label:"top headlines",desc:"Global intel headlines",run:()=>readMod("#intel","Intel feed")},
@@ -663,7 +663,7 @@ function c4play(c){if(c4Over)return;if(drop4(B4,c,1)<0)return;c4draw();if(c4win(
  setTimeout(()=>{const m=c4move(B4);drop4(B4,m,2);c4draw();if(c4win(B4,2)){c4Over=true;$q("#c4msg").textContent="JARVIS WINS. Naturally.";taunt(true);}else $q("#c4msg").textContent="Your move, sir.";},350);}
 
 /* ================= 4) TYPING CERTIFICATION ================= */
-const ty=mkOv("tyOv");panel(ty,'<button class="g-btn gx" style="float:right">✕</button><h1>STARK TYPING CERTIFICATION</h1><div id="ty-txt" class="term">Press BEGIN. 30 seconds. Type the manifest exactly.</div><input id="ty-in" placeholder="type here" style="width:100%;background:#04101c;border:1px solid var(--line);color:#cfeaf5;padding:10px" disabled><div class="g-row" style="margin-top:10px"><button id="ty-go" class="g-btn small">BEGIN</button><span id="ty-clock" style="color:var(--amber);font-family:Orbitron">30s</span></div>');
+const ty=mkOv("tyOv");panel(ty,'<button class="g-btn gx" style="float:right">✕</button><h1>Bubba TYPING CERTIFICATION</h1><div id="ty-txt" class="term">Press BEGIN. 30 seconds. Type the manifest exactly.</div><input id="ty-in" placeholder="type here" style="width:100%;background:#04101c;border:1px solid var(--line);color:#cfeaf5;padding:10px" disabled><div class="g-row" style="margin-top:10px"><button id="ty-go" class="g-btn small">BEGIN</button><span id="ty-clock" style="color:var(--amber);font-family:Orbitron">30s</span></div>');
 const TYL=["the arc reactor runs on pure attitude and palladium-free engineering","sir your coffee is at precisely the temperature you will ignore","targeting systems online please refrain by aiming at the office plants","i have read the entire internet and the comments were a mistake"];
 let tyT0=0,tyOn=false,tySen="";
 $q("#ty-go").onclick=()=>{tySen=TYL[Math.floor(Math.random()*TYL.length)];$q("#ty-txt").textContent=tySen;$q("#ty-in").disabled=false;$q("#ty-in").value="";$q("#ty-in").focus();tyT0=Date.now();tyOn=true;const iv=setInterval(()=>{const left=30-Math.floor((Date.now()-tyT0)/1000);$q("#ty-clock").textContent=left+"s";if(left<=0||!tyOn){clearInterval(iv);tyEnd();}},250);};
@@ -1083,9 +1083,9 @@ clocks();setInterval(clocks,1000);
 
 /* ===== 4) crypto ticker ===== */
 const foot=document.querySelector("footer");
-if(foot){const tk=document.createElement("div");tk.id="ticker";foot.appendChild(tk);let tickTxt="STARK INDUSTRIES · BTC -- · ETH -- · SI-STD 100.00 · ";
+if(foot){const tk=document.createElement("div");tk.id="ticker";foot.appendChild(tk);let tickTxt="Bubba INDUSTRIES · BTC -- · ETH -- · SI-STD 100.00 · ";
  function paint(){tk.innerHTML="<span>"+tickTxt+tickTxt+tickTxt+tickTxt+"</span>";}
- async function prices(){try{const d=await(await fetch("https://api.binance.com/api/v3/ticker/price?symbols=%5B%22BTCUSDT%22,%22ETHUSDT%22%5D")).json();const b=d.find(x=>x.symbol==="BTCUSDT"),e=d.find(x=>x.symbol==="ETHUSDT");tickTxt="STARK INDUSTRIES · BTC $"+Math.round(+b.price).toLocaleString()+" · ETH $"+Math.round(+e.price).toLocaleString()+" · SI-STD 100.00 · ";}catch(e){}paint();}
+ async function prices(){try{const d=await(await fetch("https://api.binance.com/api/v3/ticker/price?symbols=%5B%22BTCUSDT%22,%22ETHUSDT%22%5D")).json();const b=d.find(x=>x.symbol==="BTCUSDT"),e=d.find(x=>x.symbol==="ETHUSDT");tickTxt="Bubba INDUSTRIES · BTC $"+Math.round(+b.price).toLocaleString()+" · ETH $"+Math.round(+e.price).toLocaleString()+" · SI-STD 100.00 · ";}catch(e){}paint();}
  prices();setInterval(prices,30000);}
 
 /* ===== 12) desktop notifications ===== */
@@ -1113,7 +1113,7 @@ const MANUAL=[
 [["sketch","draw"],"HOLO-SKETCH (🎮 GAMES) is a shared drawing board — everyone online draws on the same canvas live."],
 [["poll"],"Admins launch polls from the dashboard; everyone votes and the bars update live."],
 [["hall of fame","hof"],"'sign the hall of fame' adds your signed holo-card; admins can strike entries."],
-[["id card"],"'show my id' renders a downloadable Stark clearance card with your stats."],
+[["id card"],"'show my id' renders a downloadable Bubba clearance card with your stats."],
 [["suit","theme"],"SUIT LINEUP swaps palettes: Mark III red, War Machine gunmetal, Stealth green."],
 [["radio"],"📻 RADIO plays generative synthwave synthesized live in your browser — no files."],
 [["hum"],"HUM adds a low reactor ambient drone."],
@@ -1246,7 +1246,7 @@ rfxEl.onclick=()=>{
 const wv=$q("#wvC"),wz=wv.getContext("2d");const WB=new Array(72).fill(0);
 (function wvLoop(){const w=wv.width=wv.clientWidth||600,h=wv.height=wv.clientHeight||340;wz.clearRect(0,0,w,h);
  const o=$q(".orb");const tgt=o&&o.classList.contains("speaking")?1:o&&o.classList.contains("listening")?.6:o&&o.classList.contains("alarm")?.8:.15;
- const col=document.body.classList.contains("stark")?"255,194,77":"63,210,255";
+ const col=document.body.classList.contains("Bubba")?"255,194,77":"63,210,255";
  const cx=w/2,cy=h/2,R=Math.min(w,h)/2-40;
  for(let i=0;i<72;i++){WB[i]+= (tgt*(0.25+Math.random()*0.75)-WB[i])*.3;const a=i/72*Math.PI*2;const len=8+WB[i]*46;
   wz.strokeStyle=`rgba(${col},${0.3+WB[i]*0.7})`;wz.lineWidth=3;wz.beginPath();wz.moveTo(cx+Math.cos(a)*R,cy+Math.sin(a)*R);wz.lineTo(cx+Math.cos(a)*(R+len),cy+Math.sin(a)*(R+len));wz.stroke();}
@@ -1329,7 +1329,7 @@ const aw=$q("#awC"),az=aw.getContext("2d");const AB=new Array(60).fill(0);
 (function aLoop(){requestAnimationFrame(aLoop);if(!dv.classList.contains("on"))return;
  const w=aw.width=aw.clientWidth||600,h=aw.height=aw.clientHeight||340;az.clearRect(0,0,w,h);
  const o=$q(".orb");const tgt=o&&o.classList.contains("speaking")?1:o&&o.classList.contains("listening")?.55:.12;
- const col=document.body.classList.contains("stark")?"255,194,77":"63,210,255";
+ const col=document.body.classList.contains("Bubba")?"255,194,77":"63,210,255";
  const cx=w/2,cy=h/2,R=Math.min(w,h)/2-70;
  for(let i=0;i<60;i++){AB[i]+=(tgt*(0.25+Math.random()*0.75)-AB[i])*.3;const a=i/60*Math.PI*2;const len=6+AB[i]*50;
   az.strokeStyle=`rgba(${col},${0.25+AB[i]*0.75})`;az.lineWidth=3;az.beginPath();az.moveTo(cx+Math.cos(a)*R,cy+Math.sin(a)*R);az.lineTo(cx+Math.cos(a)*(R+len),cy+Math.sin(a)*(R+len));az.stroke();}
